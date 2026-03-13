@@ -2,86 +2,73 @@
 
 AUTURNO is a mobile-first workshop operations platform for mechanical service businesses.
 
-It is designed to connect:
-- appointments
-- diagnostics
-- quotes
-- operations / repairs
-- delivery promises
-- customer communication
-- real workshop capacity
+This repository is scaffolded as an API-first monorepo:
+- `apps/api`: NestJS backend, source of truth for security, tenancy, workflows, and business rules
+- `apps/web`: Angular frontend, mobile-first UX for workshop and customer-facing flows
 
-This repository uses:
-- Angular for the web frontend
-- NestJS for the backend API
-- MongoDB Atlas as database
-- Auth0 for authentication
-- backend-driven RBAC and workshop-based multi-tenancy
-
-## Product Scope
-
-Current scope is a closed B2B2C model:
-- each workshop has its own workspace
-- customers interact with their own workshop only
-
-Out of V1:
-- marketplace
-- public workshop search
-- public reputation
-- vehicle health score
-- workshop comparisons
-
-## Core Product Principles
-
-- capacity is measured in hours, not car count
-- diagnosis and operation are separate workflows
-- delivery promises must be realistic and traceable
-- diagnosis remains valuable even if no repair is approved
-- metrics are captured silently from day one
-
-## Repository Structure
+## Monorepo Structure
 
 ```text
 apps/
-  api/   # NestJS backend
-  web/   # Angular frontend
+  api/
+    src/
+      common/
+      config/
+      modules/
+        auth/
+        users/
+        workshops/
+        services/
+        appointments/
+        work-orders/
+        diagnostics/
+        quotes/
+        notifications/
+        loyalty/
+        audit/
+  web/
+    src/
+      app/
+        core/
+        shared/
+        auth/
+        client-portal/
+        workshop-portal/
+          agenda/
+          work-orders/
+          diagnostics/
+          quotes/
+          customers/
+          vehicles/
+          metrics/
 ```
-## Architecture Principles
 
-* API-first architecture
-* backend owns business rules
-* frontend owns presentation and interaction
-* every tenant-owned record must be scoped by workshopId
-* no cross-tenant access
-* roles and permissions are resolved server-side
+## Scope Guardrails (V1)
 
-## Initial Functional Scope
+Included:
+- appointments, work orders, diagnostics, quotes, delivery promises, customer communication, loyalty basics
 
-V1 includes:
-* appointment scheduling
-* service catalog
-* work orders
-* diagnosis flow
-* quotes and approvals
-* customer status tracking
-* delivery promise management
-* loyalty basics
-* audit trail for critical actions
+Excluded:
+- marketplace features
+- public workshop search
+- public ratings/reputation
+- workshop comparison logic
 
-## Development Priorities
+## Architecture Rules
 
-1. security and tenancy
-2. domain model correctness
-3. workflow correctness
-4. backend architecture
-5. frontend structure
-6. mobile-first UX
+- API-first: backend owns core business logic and transitions
+- strict workshop-based multi-tenancy
+- backend-driven RBAC and auditability for critical actions
+- diagnosis and operation remain separate workflow concepts
 
-## Notes for Contributors
+## Workspace Commands
 
-Before making product or architecture decisions, read `AGENTS.md`.
-`AGENTS.md` is the source of truth for:
-* product rules
-* V1 scope boundaries
-* architecture rules
-* output expectations
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm lint
+pnpm test
+```
+
+See `AGENTS.md` for the complete product and architecture source of truth.
