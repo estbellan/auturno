@@ -1,0 +1,19 @@
+{
+  "name": "auturno",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AUTURNO monorepo (API-first workshop operations platform)",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "format": "pnpm -r format",
+    "check": "pnpm lint && pnpm test"
+  }
+}
