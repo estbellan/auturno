@@ -1,0 +1,65 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  color: #111827;
+  background-color: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-header {
+  padding: 1rem;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.layout-content {
+  flex: 1;
+  padding: 1rem;
+}
+
+.layout-footer {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.card {
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 1rem;
+}
+
+.nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.nav-link {
+  background: #1d4ed8;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .layout-content {
+    padding: 1.5rem;
+  }
+}
