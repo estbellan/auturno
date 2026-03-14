@@ -1,0 +1,29 @@
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.1);
+  display: grid;
+  gap: 10px;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+pre {
+  overflow: auto;
+  background: #e2e8f0;
+  padding: 10px;
+  border-radius: 8px;
+}
