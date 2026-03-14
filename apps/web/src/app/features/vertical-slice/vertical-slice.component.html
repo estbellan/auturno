@@ -1,0 +1,67 @@
+<main class="container">
+  <h1>AUTURNO V1 Vertical Slice</h1>
+
+  <section class="card">
+    <h2>1) Auth</h2>
+    <button type="button" (click)="loginWithAuth0()">Login with Auth0</button>
+    <button type="button" (click)="useAuth0Token()">Use Auth0 token</button>
+    <label>
+      Or paste bearer token
+      <input [(ngModel)]="token" placeholder="Bearer token" />
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>2) Flow Input</h2>
+    <label>
+      Workshop name
+      <input [(ngModel)]="workshopName" />
+    </label>
+
+    <label>
+      Service name
+      <input [(ngModel)]="serviceName" />
+    </label>
+
+    <label>
+      Estimated duration hours
+      <input type="number" min="0.1" step="0.1" [(ngModel)]="estimatedDurationHours" />
+    </label>
+
+    <label class="inline">
+      <input type="checkbox" [(ngModel)]="requiresDiagnostic" /> Requires diagnosis
+    </label>
+
+    <label>
+      Client ID
+      <input [(ngModel)]="clientId" />
+    </label>
+
+    <label>
+      Vehicle ID
+      <input [(ngModel)]="vehicleId" />
+    </label>
+
+    <label>
+      Scheduled start
+      <input type="datetime-local" [(ngModel)]="scheduledStartAt" />
+    </label>
+
+    <button type="button" (click)="runFlow()">Run full backend flow</button>
+  </section>
+
+  <section class="card" *ngIf="error">
+    <h2>Error</h2>
+    <pre>{{ error }}</pre>
+  </section>
+
+  <section class="card" *ngIf="me">
+    <h2>/me</h2>
+    <pre>{{ me | json }}</pre>
+  </section>
+
+  <section class="card" *ngIf="workOrder">
+    <h2>Result work order</h2>
+    <pre>{{ workOrder | json }}</pre>
+  </section>
+</main>
