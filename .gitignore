@@ -1,0 +1,118 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+.pnpm-store/
+
+# =========================
+# Build outputs
+# =========================
+dist/
+build/
+out/
+.tmp/
+temp/
+coverage/
+
+# Angular / frontend build artifacts
+.angular/
+apps/web/dist/
+apps/web/.angular/
+
+# NestJS / backend build artifacts
+apps/api/dist/
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Editors / IDE
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# =========================
+# Testing
+# =========================
+test-results/
+playwright-report/
+.nyc_output/
+
+# =========================
+# Cache
+# =========================
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.turbo/
+
+# =========================
+# Auth / secrets / keys
+# =========================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# =========================
+# Local databases / dumps
+# =========================
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+
+# =========================
+# Generated files
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Docker / containers
+# =========================
+.docker/
+docker-data/
+
+# =========================
+# Android / iOS / mobile leftovers
+# Keep these ignored in case native/mobile experiments exist
+# =========================
+android/.gradle/
+android/local.properties
+ios/Pods/
+ios/build/
+
+# =========================
+# Local app-specific files
+# =========================
+local.properties
