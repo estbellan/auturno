@@ -1,34 +1,49 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { ServiceEntity } from './service.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
 import { CreateServiceDto } from './dto/create-service.dto';
+import { Service, ServiceDocument } from './schemas/service.schema';
+import { ServiceEntity } from './service.entity';
 
 @Injectable()
 export class ServicesService {
-  private readonly services: ServiceEntity[] = [];
+  constructor(
+    @InjectModel(Service.name)
+    private readonly serviceModel: Model<ServiceDocument>,
+  ) {}
 
-  create(workshopId: string, input: CreateServiceDto): ServiceEntity {
-    const created: ServiceEntity = {
-      id: randomUUID(),
+  async create(workshopId: string, input: CreateServiceDto): Promise<ServiceEntity> {
+    const created = await this.serviceModel.create({
       workshopId,
       name: input.name,
       estimatedDurationHours: input.estimatedDurationHours,
       requiresDiagnostic: input.requiresDiagnostic,
-    };
+    });
 
-    this.services.push(created);
-    return created;
+    return this.toEntity(created);
   }
 
-  findByIdInWorkshop(workshopId: string, serviceId: string): ServiceEntity {
-    const service = this.services.find(
-      (item) => item.workshopId === workshopId && item.id === serviceId,
-    );
+  async findByIdInWorkshop(workshopId: string, serviceId: string): Promise<ServiceEntity> {
+    const service = await this.serviceModel.findOne({
+      _id: serviceId,
+      workshopId,
+    });
 
     if (!service) {
       throw new NotFoundException('Service not found in workshop.');
     }
 
-    return service;
+    return this.toEntity(service);
+  }
+
+  private toEntity(service: ServiceDocument): ServiceEntity {
+    return {
+      id: service._id.toString(),
+      workshopId: service.workshopId,
+      name: service.name,
+      estimatedDurationHours: service.estimatedDurationHours,
+      requiresDiagnostic: service.requiresDiagnostic,
+    };
   }
 }

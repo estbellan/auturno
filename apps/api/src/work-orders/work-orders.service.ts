@@ -1,36 +1,54 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
 import { AppointmentsService } from '../appointments/appointments.service';
 import { ServicesService } from '../services/services.service';
+import { WorkOrder, WorkOrderDocument } from './schemas/work-order.schema';
 import { WorkOrderEntity } from './work-order.entity';
 
 @Injectable()
 export class WorkOrdersService {
-  private readonly workOrders: WorkOrderEntity[] = [];
-
   constructor(
+    @InjectModel(WorkOrder.name)
+    private readonly workOrderModel: Model<WorkOrderDocument>,
     private readonly appointmentsService: AppointmentsService,
     private readonly servicesService: ServicesService,
   ) {}
 
-  createFromAppointment(workshopId: string, appointmentId: string): WorkOrderEntity {
-    const appointment = this.appointmentsService.findByIdInWorkshop(
+  async createFromAppointment(
+    workshopId: string,
+    appointmentId: string,
+  ): Promise<WorkOrderEntity> {
+    const existing = await this.workOrderModel
+      .findOne({
+        workshopId,
+        appointmentId,
+      })
+      .exec();
+
+    if (existing) {
+      return this.toEntity(existing);
+    }
+
+    const appointment = await this.appointmentsService.findByIdInWorkshop(
       workshopId,
       appointmentId,
     );
-    const service = this.servicesService.findByIdInWorkshop(
+
+    const service = await this.servicesService.findByIdInWorkshop(
       workshopId,
       appointment.serviceId,
     );
 
     const scheduled = new Date(appointment.scheduledStartAt);
-    const deliveryDate = new Date(
+    const firstPromiseDate = new Date(
       scheduled.getTime() + service.estimatedDurationHours * 60 * 60 * 1000,
     );
 
     const type = service.requiresDiagnostic ? 'diagnostic' : 'direct';
-    const workOrder: WorkOrderEntity = {
-      id: randomUUID(),
+
+    const created = await this.workOrderModel.create({
       workshopId,
       appointmentId: appointment.id,
       type,
@@ -38,14 +56,38 @@ export class WorkOrdersService {
       clientId: appointment.clientId,
       vehicleId: appointment.vehicleId,
       serviceId: appointment.serviceId,
-      estimatedDiagnosticHours: type === 'diagnostic' ? service.estimatedDurationHours : 0,
-      estimatedOperationHours: type === 'diagnostic' ? 0 : service.estimatedDurationHours,
-      promisedDiagnosticAt: type === 'diagnostic' ? deliveryDate.toISOString() : null,
-      promisedDeliveryAt: deliveryDate.toISOString(),
-      createdAt: new Date().toISOString(),
-    };
+      estimatedDiagnosticHours:
+        type === 'diagnostic' ? service.estimatedDurationHours : 0,
+      estimatedOperationHours:
+        type === 'diagnostic' ? 0 : service.estimatedDurationHours,
+      promisedDiagnosticAt:
+        type === 'diagnostic' ? firstPromiseDate : null,
+      promisedDeliveryAt:
+        type === 'diagnostic' ? null : firstPromiseDate,
+    });
 
-    this.workOrders.push(workOrder);
-    return workOrder;
+    return this.toEntity(created);
+  }
+
+  private toEntity(workOrder: WorkOrderDocument): WorkOrderEntity {
+    return {
+      id: workOrder._id.toString(),
+      workshopId: workOrder.workshopId,
+      appointmentId: workOrder.appointmentId,
+      type: workOrder.type,
+      phase: workOrder.phase,
+      clientId: workOrder.clientId,
+      vehicleId: workOrder.vehicleId,
+      serviceId: workOrder.serviceId,
+      estimatedDiagnosticHours: workOrder.estimatedDiagnosticHours,
+      estimatedOperationHours: workOrder.estimatedOperationHours,
+      promisedDiagnosticAt: workOrder.promisedDiagnosticAt
+        ? workOrder.promisedDiagnosticAt.toISOString()
+        : null,
+      promisedDeliveryAt: workOrder.promisedDeliveryAt
+        ? workOrder.promisedDeliveryAt.toISOString()
+        : null,
+      createdAt: workOrder.createdAt.toISOString(),
+    };
   }
 }

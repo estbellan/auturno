@@ -10,8 +10,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { CurrentUserContext } from '../auth/types';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { AppointmentsService } from './appointments.service';
+import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
 @Controller('appointments')
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -20,7 +20,7 @@ export class AppointmentsController {
 
   @Post()
   @RequirePermissions('appointments.manage')
-  create(
+  async create(
     @CurrentUser() user: CurrentUserContext,
     @Body() input: CreateAppointmentDto,
   ) {
@@ -28,6 +28,6 @@ export class AppointmentsController {
       throw new ForbiddenException('User is not attached to a workshop yet.');
     }
 
-    return this.appointmentsService.create(user.workshopId, input);
+    return await this.appointmentsService.create(user.workshopId, input);
   }
 }

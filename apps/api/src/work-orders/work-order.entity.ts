@@ -12,6 +12,6 @@ export interface WorkOrderEntity {
   estimatedDiagnosticHours: number;
   estimatedOperationHours: number;
   promisedDiagnosticAt: string | null;
-  promisedDeliveryAt: string;
+  promisedDeliveryAt: string | null;
   createdAt: string;
 }

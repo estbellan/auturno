@@ -20,7 +20,7 @@ export class ServicesController {
 
   @Post()
   @RequirePermissions('services.manage')
-  create(
+  async create(
     @CurrentUser() user: CurrentUserContext,
     @Body() input: CreateServiceDto,
   ) {
@@ -28,6 +28,6 @@ export class ServicesController {
       throw new ForbiddenException('User is not attached to a workshop yet.');
     }
 
-    return this.servicesService.create(user.workshopId, input);
+    return await this.servicesService.create(user.workshopId, input);
   }
 }

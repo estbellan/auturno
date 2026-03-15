@@ -14,11 +14,11 @@ export class WorkshopsController {
 
   @Post('bootstrap')
   @RequirePermissions('workshop.manage')
-  bootstrap(
+  async bootstrap(
     @CurrentUser() user: CurrentUserContext,
     @Body() body: BootstrapWorkshopDto,
   ) {
-    return this.workshopsService.bootstrapOwnerWorkshop(
+    return await this.workshopsService.bootstrapOwnerWorkshop(
       user,
       body.workshopName.trim(),
     );

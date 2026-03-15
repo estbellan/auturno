@@ -19,7 +19,7 @@ export class WorkOrdersController {
 
   @Post('from-appointment/:appointmentId')
   @RequirePermissions('workorders.write')
-  createFromAppointment(
+  async createFromAppointment(
     @CurrentUser() user: CurrentUserContext,
     @Param('appointmentId') appointmentId: string,
   ) {
@@ -27,6 +27,9 @@ export class WorkOrdersController {
       throw new ForbiddenException('User is not attached to a workshop yet.');
     }
 
-    return this.workOrdersService.createFromAppointment(user.workshopId, appointmentId);
+    return await this.workOrdersService.createFromAppointment(
+      user.workshopId,
+      appointmentId,
+    );
   }
 }

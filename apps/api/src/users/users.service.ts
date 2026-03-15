@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
 import { AuthClaims, CurrentUserContext, Role } from '../auth/types';
+import { User, UserDocument } from './schemas/user.schema';
 import { UserEntity } from './user.entity';
 
 const rolePermissionsMap: Record<Role, string[]> = {
@@ -42,27 +45,80 @@ const rolePermissionsMap: Record<Role, string[]> = {
 
 @Injectable()
 export class UsersService {
-  private readonly users: UserEntity[] = [];
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+  ) {}
 
-  findOrCreateFromAuthClaims(claims: AuthClaims): CurrentUserContext {
-    let user = this.users.find((item) => item.authSubject === claims.sub);
+  async findOrCreateFromAuthClaims(claims: AuthClaims): Promise<CurrentUserContext> {
+    const authSubject = claims.sub;
+    const email = (claims.email ?? `${claims.sub}@auturno.local`).trim().toLowerCase();
+    const name = (claims.name ?? 'New User').trim();
+
+    const user = await this.userModel
+      .findOneAndUpdate(
+        { authSubject },
+        {
+          $setOnInsert: {
+            authSubject,
+            email,
+            name,
+            workshopId: null,
+            roles: ['owner'],
+            permissions: [...rolePermissionsMap.owner],
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+        },
+      )
+      .exec();
 
     if (!user) {
-      user = {
-        id: randomUUID(),
-        authSubject: claims.sub,
-        email: claims.email ?? `${claims.sub}@auturno.local`,
-        name: claims.name ?? 'New User',
-        workshopId: null,
-        roles: ['owner'],
-        permissions: [...rolePermissionsMap.owner],
-      };
-
-      this.users.push(user);
+      throw new NotFoundException('User could not be created from auth claims.');
     }
 
+    return this.toCurrentUserContext(user);
+  }
+
+  async attachUserToWorkshop(
+    userId: string,
+    workshopId: string,
+    roles: Role[],
+  ): Promise<UserEntity> {
+    const permissions = this.resolvePermissions(roles);
+
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          workshopId,
+          roles,
+          permissions,
+        },
+        {
+          new: true,
+        },
+      )
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return this.toEntity(user);
+  }
+
+  private resolvePermissions(roles: Role[]): string[] {
+    return Array.from(
+      new Set(roles.flatMap((role) => rolePermissionsMap[role] ?? [])),
+    );
+  }
+
+  private toCurrentUserContext(user: UserDocument): CurrentUserContext {
     return {
-      id: user.id,
+      id: user._id.toString(),
       authSubject: user.authSubject,
       email: user.email,
       name: user.name,
@@ -72,18 +128,15 @@ export class UsersService {
     };
   }
 
-  attachUserToWorkshop(userId: string, workshopId: string, roles: Role[]): UserEntity {
-    const user = this.users.find((item) => item.id === userId);
-    if (!user) {
-      throw new Error('User not found.');
-    }
-
-    user.workshopId = workshopId;
-    user.roles = roles;
-    user.permissions = Array.from(
-      new Set(roles.flatMap((role) => rolePermissionsMap[role] ?? [])),
-    );
-
-    return user;
+  private toEntity(user: UserDocument): UserEntity {
+    return {
+      id: user._id.toString(),
+      authSubject: user.authSubject,
+      email: user.email,
+      name: user.name,
+      workshopId: user.workshopId,
+      roles: user.roles,
+      permissions: user.permissions,
+    };
   }
 }
