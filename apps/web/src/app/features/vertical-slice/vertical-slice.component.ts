@@ -1,8 +1,9 @@
+import { JsonPipe, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { JsonPipe, NgIf } from '@angular/common';
-import { AuthService } from '../../core/auth.service';
+import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'at-vertical-slice',
@@ -27,6 +28,8 @@ export class VerticalSliceComponent {
   appointment: any;
   workOrder: any;
   error = '';
+
+  readonly debugEnvironment = environment;
 
   constructor(
     private readonly authService: AuthService,

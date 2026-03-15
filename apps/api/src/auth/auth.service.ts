@@ -1,36 +1,40 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { AuthClaims } from './types';
 
 @Injectable()
 export class AuthService {
-  private readonly issuer = process.env.AUTH0_ISSUER_BASE_URL;
-  private readonly audience = process.env.AUTH0_AUDIENCE;
-  private readonly bypass = process.env.AUTH0_BYPASS === 'true';
+  constructor(private readonly configService: ConfigService) {}
 
   async verifyToken(bearerToken: string): Promise<AuthClaims> {
-    if (this.bypass) {
+    const issuer = this.configService.get<string>('AUTH0_ISSUER_BASE_URL');
+    const audience = this.configService.get<string>('AUTH0_AUDIENCE');
+    const bypass = this.configService.get<string>('AUTH0_BYPASS') === 'true';
+
+    if (bypass) {
       return {
-        sub: process.env.AUTH0_BYPASS_SUB ?? 'auth0|dev-user',
-        email: process.env.AUTH0_BYPASS_EMAIL ?? 'owner@auturno.dev',
-        name: process.env.AUTH0_BYPASS_NAME ?? 'Dev Owner',
+        sub: this.configService.get<string>('AUTH0_BYPASS_SUB') ?? 'auth0|dev-user',
+        email: this.configService.get<string>('AUTH0_BYPASS_EMAIL') ?? 'owner@auturno.dev',
+        name: this.configService.get<string>('AUTH0_BYPASS_NAME') ?? 'Dev Owner',
       };
     }
 
-    if (!this.issuer || !this.audience) {
+    if (!issuer || !audience) {
       throw new UnauthorizedException(
         'Auth0 is not configured. Set AUTH0_ISSUER_BASE_URL and AUTH0_AUDIENCE.',
       );
     }
 
     try {
+      const normalizedIssuer = issuer.replace(/\/$/, '');
       const jwks = createRemoteJWKSet(
-        new URL(`${this.issuer.replace(/\/$/, '')}/.well-known/jwks.json`),
+        new URL(`${normalizedIssuer}/.well-known/jwks.json`),
       );
 
       const { payload } = await jwtVerify(bearerToken, jwks, {
-        issuer: this.issuer,
-        audience: this.audience,
+        issuer: issuer,
+        audience: audience,
       });
 
       return {
@@ -38,7 +42,13 @@ export class AuthService {
         email: payload.email ? String(payload.email) : undefined,
         name: payload.name ? String(payload.name) : undefined,
       };
-    } catch {
+    } catch (error) {
+      console.error('Auth0 token validation failed', {
+        issuer,
+        audience,
+        error,
+      });
+
       throw new UnauthorizedException('Invalid Auth0 token.');
     }
   }

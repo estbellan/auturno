@@ -4,8 +4,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -26,7 +26,7 @@ export class AuthGuard implements CanActivate {
 
     const token = authHeader.replace('Bearer ', '').trim();
     const claims = await this.authService.verifyToken(token);
-    const user = this.usersService.findOrCreateFromAuthClaims(claims);
+    const user = await this.usersService.findOrCreateFromAuthClaims(claims);
 
     request.user = user;
     return true;

@@ -2,6 +2,11 @@
   <h1>AUTURNO V1 Vertical Slice</h1>
 
   <section class="card">
+    <h2>Debug environment</h2>
+    <pre>{{ debugEnvironment | json }}</pre>
+  </section>
+
+  <section class="card">
     <h2>1) Auth</h2>
     <button type="button" (click)="loginWithAuth0()">Login with Auth0</button>
     <button type="button" (click)="useAuth0Token()">Use Auth0 token</button>

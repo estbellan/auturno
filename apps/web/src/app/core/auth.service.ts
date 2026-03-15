@@ -1,51 +1,57 @@
-import { Injectable } from '@angular/core';
-import createAuth0Client, { Auth0Client } from '@auth0/auth0-spa-js';
+import { Injectable, inject } from '@angular/core';
+import { AuthService as Auth0AngularService } from '@auth0/auth0-angular';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root',
+})
 export class AuthService {
-  private client: Auth0Client | null = null;
-
-  private async getClient(): Promise<Auth0Client> {
-    if (this.client) {
-      return this.client;
-    }
-
-    this.client = await createAuth0Client({
-      domain: environment.auth0Domain,
-      clientId: environment.auth0ClientId,
-      authorizationParams: {
-        audience: environment.auth0Audience,
-        redirect_uri: window.location.origin,
-      },
-      cacheLocation: 'localstorage',
-    });
-
-    if (window.location.search.includes('code=')) {
-      await this.client.handleRedirectCallback();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    return this.client;
-  }
+  private readonly auth0 = inject(Auth0AngularService);
 
   async login(): Promise<void> {
-    const client = await this.getClient();
-    await client.loginWithRedirect();
+    await this.auth0.loginWithRedirect({
+      authorizationParams: {
+        redirect_uri: window.location.origin,
+        audience: environment.auth0Audience,
+      },
+    });
+  }
+
+  async signup(): Promise<void> {
+    await this.auth0.loginWithRedirect({
+      authorizationParams: {
+        redirect_uri: window.location.origin,
+        audience: environment.auth0Audience,
+        screen_hint: 'signup',
+      },
+    });
   }
 
   async logout(): Promise<void> {
-    const client = await this.getClient();
-    await client.logout({ logoutParams: { returnTo: window.location.origin } });
+    this.auth0.logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    });
   }
 
   async getAccessToken(): Promise<string | null> {
-    const client = await this.getClient();
-    const isAuthenticated = await client.isAuthenticated();
-    if (!isAuthenticated) {
+    try {
+      return await firstValueFrom(
+        this.auth0.getAccessTokenSilently({
+          authorizationParams: {
+            audience: environment.auth0Audience,
+          },
+        }),
+      );
+    } catch (error) {
+      console.error('Failed to get Auth0 access token', error);
       return null;
     }
+  }
 
-    return client.getTokenSilently();
+  async isAuthenticated(): Promise<boolean> {
+    return await firstValueFrom(this.auth0.isAuthenticated$);
   }
 }
