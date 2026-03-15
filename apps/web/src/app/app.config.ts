@@ -3,7 +3,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 import { provideAuth0 } from '@auth0/auth0-angular';
 
-import { environment } from '../environments/environment';
+import { environment } from '../environments/environment.development';
 import { appRoutes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {

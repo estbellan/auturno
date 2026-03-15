@@ -7,9 +7,7 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
-    "lint": "echo \"TODO: configure eslint for API\"",
-    "test": "echo \"TODO: configure API tests\"",
-    "format": "echo \"TODO: configure formatting for API\""
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.16",

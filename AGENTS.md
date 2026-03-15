@@ -1,10 +1,10 @@
-# AUTURNO - Project Instructions
+# AUTURNO - AGENTS.md
 
-## Project Identity
+## Mission
 
-AUTURNO is a mobile-first workshop operations platform for mechanical service businesses.
+Work on AUTURNO as a mobile-first workshop operations platform for mechanical service businesses.
 
-This is NOT just an appointment scheduler.
+AUTURNO is NOT a generic appointment app.
 
 Correct framing:
 - workshop operating system
@@ -12,101 +12,40 @@ Correct framing:
 - diagnosis-to-operation workflow platform
 - operational data capture layer from day one
 
-Core goals:
-- reduce friction
-- reduce customer calls
-- professionalize communication
-- measure real operational times
-- improve delivery promise accuracy
-- separate diagnosis from repair
-- build operational intelligence from historical data
+Your job is to help implement V1 safely, incrementally, and with minimal unnecessary change.
 
 ---
 
-## Scope Rules
+## Non-Negotiable Product Rules
 
-Current model:
-- closed B2B2C
-- each workshop has its own workspace and customer-facing portal
+### Business model
+Current model is closed B2B2C:
+- each workshop has its own workspace
+- each workshop has its own customer-facing experience
 - customers interact only with their workshop
 
-Explicitly OUT of V1:
+### Explicitly out of V1
+Do NOT introduce any of these unless explicitly requested:
 - marketplace
 - public workshop search
-- public ratings
-- public reputation
-- vehicle health score
+- public ratings or reputation
 - workshop comparison
+- vehicle health score
 - public reliability badges
+- multi-workshop discovery
 
-Do not introduce out-of-scope features unless explicitly requested.
-
----
-
-## Product Principles
-
-### 1. Real capacity
-Capacity is measured in work hours, not in number of cars.
-
-Each mechanic may have:
-- daily available hours
-- efficiency factor
-- optional specialties (future)
-
-### 2. Healthy promise model
-The system should not be too rigid or too vague.
-
-Rules:
-- promise the most probable outcome
-- show a clear expected date or estimate
-- allow rescheduling
-- require a reason when rescheduling
-- track whether customer was informed
-- preserve full change history
-
-### 3. Strict diagnosis / operation separation
-Do not merge diagnosis and repair in data model or core workflow.
-
-Phases may include:
-- reception
-- diagnosis
-- quote
-- approval
-- operation
-- ready
-- pickup / close
-
-### 4. Diagnosis as an asset
-Diagnosis may not end in repair, but must still create value.
-
-If repair is declined:
-- findings stay stored
-- recommendations stay stored
-- unresolved issues remain available for follow-up
-- customer may later see pending recommendations
-
-Important:
-- history must not bias technician judgement
-- history is contextual only
-- never auto-suggest conclusions as truth
-
-### 5. Silent metrics from V1
-Capture automatically:
-- estimated times
-- actual times
-- phase timestamps
-- promise changes
-- delay reasons
-- ready-to-pickup lag
-- estimated vs actual variance
-
-Do not overbuild dashboards at first.
+### Core product principles
+- Capacity is measured in work hours, not number of cars.
+- Diagnosis and operation are separate concepts and must remain separate in model and workflow.
+- Delivery promises must be realistic, editable, and traceable.
+- Diagnosis remains valuable even if repair is rejected.
+- Silent metrics must be captured from V1.
 
 ---
 
 ## Core Workflows
 
-### A. Direct Service
+### Direct service flow
 Examples:
 - oil change
 - wheel alignment
@@ -118,15 +57,16 @@ Phases:
 - scheduled
 - in_operation
 - ready
-- closed / picked_up
+- closed
+- picked_up
 
-### B. Diagnosis Flow
+### Diagnosis flow
 Examples:
 - brake noise
 - electrical issue
 - vibration
 - check engine
-- undetermined issue
+- unknown issue
 
 Phases:
 - reception
@@ -135,88 +75,42 @@ Phases:
 - awaiting_approval
 - in_operation
 - ready
-- closed / picked_up
+- closed
+- picked_up
 
 Rules:
-- promise diagnosis first, not final delivery
-- approved quote -> move to operation
-- rejected quote -> close without repair but preserve diagnosis
+- diagnosis promise comes before final delivery promise
+- approved quote moves to operation
+- rejected quote closes repair path but preserves diagnosis
 
 ---
 
 ## V1 Functional Scope
 
-### Appointments
+Implement only V1 unless explicitly told otherwise.
+
+### Included in V1
 - service catalog
-- estimated duration
-- requiresDiagnostic boolean
-- workshop calendar
-- capacity-based scheduling
-- over-capacity warning/blocking
+- appointments
+- work orders
+- diagnosis flow
+- quotes and approvals
+- delivery promise management
+- workshop/customer portals
+- loyalty basics
+- audit trail for critical actions
+- backend-driven RBAC
+- workshop-based tenancy
 
-### Work Orders
-- create from appointment or manually
-- type: direct | diagnostic
-- phase management
-- automatic timestamps
-- phase transitions
-- closing
-
-### Delivery Promise
-- ETA calculated by system
-- workshop may adjust expected date
-- adjustment requires:
-  - reason
-  - customer informed flag
-  - optional notification trigger
-- preserve change history
-
-### Diagnosis
-Each diagnosis may contain:
-- finding description
-- severity: low | medium | high
-- recommendation
-- requiresImmediateRepair boolean
-- repaired boolean
-- optional followUpSuggestedAt
-
-### Quotes
-- itemized quote
-- total
-- status: draft | sent | approved | rejected
-- approved quote moves work order to operation
-- rejected quote may close work order without repair
-
-### Customer Experience
-Customer can:
-- request appointment
-- view work order / vehicle status
-- view expected delivery
-- approve or reject quote
-- access service history
-- see pending recommendations
-- see basic loyalty points
-
-### Loyalty
-- simple points system
-- points per completed order
-- configurable rules
-- no complex gamification
-
-### Silent Metrics
-Track:
-- createdAt
-- diagnosticStartAt
-- diagnosticEndAt
-- operationStartAt
-- readyAt
-- pickedUpAt
-- estimatedDiagnosticHours
-- estimatedOperationHours
-- reschedules
-- delay reasons
-- clientNotified
-- lag periods
+### Excluded from V1
+- marketplace flows
+- public discovery
+- public ratings
+- public reputation
+- health score
+- advanced analytics dashboards
+- advanced gamification
+- voice-first intake
 
 ---
 
@@ -224,20 +118,22 @@ Track:
 
 Security is a top priority.
 
-Requirements:
-- robust auth from day one
-- workshop-based multi-tenancy
-- strict roles and permissions
-- auditability for critical actions
+### Required
+- Auth0 authenticates
+- backend authorizes
+- backend resolves roles and permissions from database
+- every tenant-owned record must include workshopId
+- no cross-tenant access
+- critical actions must be auditable
 
-Roles:
+### Roles
 - owner
 - admin
 - operator
 - mechanic
 - client
 
-Base permissions:
+### Base permissions
 - workshop.manage
 - users.manage
 - services.manage
@@ -251,15 +147,7 @@ Base permissions:
 - clients.write
 - metrics.read
 
-Principles:
-- Auth0 authenticates
-- backend authorizes
-- backend resolves roles and permissions from database
-- every tenant-owned document must include workshopId
-- no cross-tenant access
-- critical actions must be auditable
-
-Audit examples:
+### Audit examples
 - ETA changes
 - status transitions
 - diagnosis changes
@@ -272,10 +160,10 @@ Audit examples:
 
 Use this stack unless explicitly told otherwise:
 - Frontend: Angular
-- Format: mobile-first responsive web app
+- Delivery: mobile-first responsive web app
 - Backend: NestJS
 - Database: MongoDB Atlas
-- Auth: Auth0 for SPA / web
+- Auth: Auth0 for SPA/web
 - Architecture: API-first
 
 Important:
@@ -288,7 +176,7 @@ Important:
 
 ## Architecture Rules
 
-### Backend owns:
+### Backend owns
 - auth integration
 - RBAC
 - tenancy enforcement
@@ -300,119 +188,40 @@ Important:
 - history
 - auditing
 
-### Frontend owns:
+### Frontend owns
 - presentation
 - forms
 - navigation
 - API consumption
 - UI state
 
-Do not put critical business rules in frontend code.
+Never put critical business rules in frontend code.
 
 ---
 
-## Domain Model
+## Repository Rules
 
-Main entities:
-- Workshop
-- User
-- Client
-- Vehicle
-- Mechanic
-- Service
-- Appointment
-- WorkOrder
-- Diagnostic
-- Quote
-- Notification
-- LoyaltyPoints / CustomerPoints
-- AuditEvent
+### Active structure
+Treat the current working repository structure as the source of truth.
 
-Key fields:
-
-### Workshop
-- id
-- name
-- plan
-- settings
-
-### User
-- authProvider
-- authSubject
-- email
-- name
-- workshopId
-- roles[]
-- permissions[]
-- status
-
-### Service
-- name
-- estimatedDurationHours
-- requiresDiagnostic
-
-### WorkOrder
-- type: direct | diagnostic
-- phase
-- clientId
-- vehicleId
-- serviceId or services
-- estimatedDiagnosticHours
-- estimatedOperationHours
-- promisedDiagnosticAt
-- promisedDeliveryAt
-- adjustedDeliveryDate
-- deliveryChangeReason
-- clientNotified
-- createdAt
-- diagnosticStartAt
-- diagnosticEndAt
-- operationStartAt
-- readyAt
-- pickedUpAt
-
-### Diagnostic
-- workOrderId
-- findings
-- severity
-- recommendation
-- requiresImmediateRepair
-- repaired
-- followUpSuggestedAt
-
-### Quote
-- workOrderId
-- items
-- total
-- status: draft | sent | approved | rejected
-
-### AuditEvent
-- workshopId
-- actorUserId
-- action
-- entityType
-- entityId
-- payloadDiff
-- createdAt
-
----
-
-## Expected Repository Structure
-
-Use a clear separation between frontend and backend.
-
-Preferred structure:
+Preferred repo layout:
 - apps/api
 - apps/web
 
-Angular structure:
+### Important
+- Do not create parallel architectures.
+- Do not duplicate modules in alternate trees.
+- Do not scaffold a second version of an already existing area.
+- Reuse and extend the currently active code layout instead of inventing a new one.
+
+### Angular structure
 - auth
 - core
 - shared
 - client-portal
 - workshop-portal
 
-Workshop portal areas:
+### Workshop portal areas
 - agenda
 - work-orders
 - diagnostics
@@ -421,7 +230,7 @@ Workshop portal areas:
 - vehicles
 - metrics
 
-NestJS modules:
+### NestJS areas
 - auth
 - users
 - workshops
@@ -436,19 +245,76 @@ NestJS modules:
 
 ---
 
+## Module Wiring Rules
+
+When working in NestJS:
+- if a service depends on another service, import the module that exports that dependency
+- if a controller or route uses a guard, ensure the containing module imports the module that exports that guard and its dependencies
+- prefer explicit module imports/exports over implicit assumptions
+- do not leave dependency wiring half-finished
+
+When working in Angular:
+- prefer standalone components if that is what the current app uses
+- keep route structure aligned with the existing app
+- do not invent a second app shell
+
+---
+
+## Environment and Secret Rules
+
+### Frontend
+Only public client configuration may exist in Angular environment files:
+- apiBaseUrl
+- auth0Domain
+- auth0ClientId
+- auth0Audience
+
+Do not place secrets in frontend code.
+
+### Backend
+Sensitive values must stay in backend env files only:
+- Mongo connection strings
+- Auth0 secrets
+- tokens
+- passwords
+- private credentials
+
+### Secret handling
+- Never print, copy, or move secret values into generated code, docs, prompts, or commits.
+- Treat .env, .env.local, credentials, tokens, passwords, and connection strings as sensitive.
+- Use placeholders in examples and committed files.
+- Prefer `.env.example` for documented config.
+- Do not move backend secrets into frontend files.
+
+---
+
+## Package and Tooling Rules
+
+- Do not leave fake TODO scripts in package.json.
+- Only add scripts that are real and runnable in the current repo.
+- If lint/test/format are not configured, omit those scripts instead of faking them.
+- Do not add dependencies unless they are necessary for the requested task.
+- Do not upgrade major versions unless explicitly requested.
+- Do not mix incompatible framework majors.
+- Minimize tooling churn.
+
+---
+
 ## Execution Rules
 
 Always:
 - prioritize V1 over future ideas
 - preserve diagnosis vs operation separation
-- preserve multi-tenancy and RBAC
-- preserve backend-driven rules
-- prefer the simplest implementation consistent with the architecture
+- preserve multi-tenancy and backend-driven RBAC
+- prefer the smallest correct change
 - optimize for incremental delivery
-- assume mobile-first UX
+- preserve working code
+- avoid broad refactors unless explicitly requested
+- avoid speculative abstractions
+- avoid replacing existing working patterns without reason
 - do not redesign the product unless explicitly asked
 
-Priority order:
+### Priority order
 1. security and tenancy
 2. domain model correctness
 3. workflow correctness
@@ -461,36 +327,59 @@ Priority order:
 
 ## Output Rules
 
-When generating code:
-- return complete files ready to copy/paste
-- do not return partial diffs unless explicitly requested
-- keep names consistent with this project brief
+### When generating code
+- return complete files, not partial diffs, unless explicitly requested
+- keep names and paths consistent with the current repo
+- prefer minimal changes over rewrites
+- do not invent missing files unless they are truly required
+- do not silently rename core concepts
 
-When generating architecture:
-- return folder tree first
-- then a concise explanation
-- then implementation order
+### When generating architecture
+Return in this order:
+1. folder tree
+2. concise explanation
+3. implementation order
 
-When generating backend design:
-- include modules
+### When generating backend design
+Include:
+- modules
 - DTOs
 - schemas/entities
 - guards
 - services
 - permissions
+- import/export wiring when relevant
 
-When generating frontend design:
-- include routes
+### When generating frontend design
+Include:
+- routes
 - layouts
-- feature modules
+- feature areas
 - component responsibilities
 - mobile-first notes
 
-When generating endpoints:
-- include method
+### When generating endpoints
+Include:
+- method
 - route
 - purpose
 - request shape
 - response shape
 - required permissions
 - tenancy rules
+
+---
+
+## Working Style
+
+- Be practical.
+- Be conservative with changes.
+- Respect existing working code.
+- Prefer vertical slices over broad platform refactors.
+- Surface risky assumptions clearly.
+- Keep explanations short and implementation-focused.
+
+When uncertain:
+- inspect the current repo structure first
+- prefer adapting to what already exists
+- do not assume a clean scaffold if the repo is already partially implemented

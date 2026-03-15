@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService as Auth0AngularService } from '@auth0/auth0-angular';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { environment } from '../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root',

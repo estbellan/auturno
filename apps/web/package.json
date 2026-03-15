@@ -4,11 +4,10 @@
   "private": true,
   "description": "AUTURNO web frontend (Angular, mobile-first)",
   "scripts": {
-    "dev": "ng serve --host 0.0.0.0 --port 4200",
-    "build": "ng build",
-    "lint": "echo \"TODO: configure eslint for web\"",
-    "test": "echo \"TODO: configure web tests\"",
-    "format": "echo \"TODO: configure formatting for web\""
+    "dev": "ng serve --configuration development",
+    "start": "ng serve --configuration development",
+    "build": "ng build --configuration production",
+    "build:dev": "ng build --configuration development"
   },
   "dependencies": {
     "@angular/animations": "^20.3.18",
