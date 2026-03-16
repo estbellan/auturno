@@ -162,13 +162,13 @@ export class WorkOrdersService {
     }
 
     const allowedTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
-      scheduled: ['in_operation', 'ready', 'closed', 'picked_up'],
+      scheduled: ['in_operation'],
       reception: ['in_diagnosis'],
       in_diagnosis: ['quote_sent'],
       quote_sent: ['awaiting_approval', 'in_operation', 'closed'],
       awaiting_approval: ['in_operation', 'closed'],
-      in_operation: ['ready', 'closed'],
-      ready: ['closed', 'picked_up'],
+      in_operation: ['ready'],
+      ready: ['closed'],
       closed: ['picked_up'],
       picked_up: [],
     };

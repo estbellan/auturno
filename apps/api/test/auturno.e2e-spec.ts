@@ -160,6 +160,24 @@ describe('AUTURNO API e2e', () => {
     await expectAuditEvent('workshop-a', 'work_order', workOrder.id, 'work_order_created');
   });
 
+  it('covers direct work-order operational actions', async () => {
+    const service = await createService('tenant-a', false, 'Tire Rotation');
+    const appointment = await createAppointment('tenant-a', service.id);
+    const workOrder = await createWorkOrder('tenant-a', appointment.id);
+
+    const inOperation = await startOperation('tenant-a', workOrder.id);
+    expect(inOperation.status).toBe('in_operation');
+
+    const ready = await markReady('tenant-a', workOrder.id);
+    expect(ready.status).toBe('ready');
+
+    const closed = await closeWorkOrder('tenant-a', workOrder.id);
+    expect(closed.status).toBe('closed');
+
+    const pickedUp = await pickUpWorkOrder('tenant-a', workOrder.id);
+    expect(pickedUp.status).toBe('picked_up');
+  });
+
   it('covers the diagnostic flow without implying quote_sent on completion', async () => {
     const flow = await createCompletedDiagnosticFlow('tenant-a');
     const persistedWorkOrder = await findWorkOrder(flow.workOrder.id);
@@ -207,6 +225,26 @@ describe('AUTURNO API e2e', () => {
       'in_operation',
     );
     await expectAuditEvent('workshop-a', 'quote', quote.id, 'quote_approved');
+  });
+
+  it('covers diagnostic approved work-order operational actions', async () => {
+    const flow = await createCompletedDiagnosticFlow('tenant-a');
+    const quote = await createQuote('tenant-a', flow.completedDiagnostic.id);
+
+    await sendQuote('tenant-a', quote.id);
+    await approveQuote('tenant-a', quote.id);
+    expect((await findWorkOrder(flow.workOrder.id))?.status).toBe(
+      'in_operation',
+    );
+
+    const ready = await markReady('tenant-a', flow.workOrder.id);
+    expect(ready.status).toBe('ready');
+
+    const closed = await closeWorkOrder('tenant-a', flow.workOrder.id);
+    expect(closed.status).toBe('closed');
+
+    const pickedUp = await pickUpWorkOrder('tenant-a', flow.workOrder.id);
+    expect(pickedUp.status).toBe('picked_up');
   });
 
   it('covers quote rejection flow in a separate diagnostic path', async () => {
@@ -261,6 +299,39 @@ describe('AUTURNO API e2e', () => {
       .patch(`/quotes/${quote.id}/send`)
       .set('Authorization', 'Bearer tenant-b')
       .expect(404);
+  });
+
+  it('prevents invalid operational transitions', async () => {
+    const diagnosticFlow = await createDiagnosticDraftFlow(
+      'tenant-a',
+      'Transmission Diagnosis',
+    );
+
+    await request(app.getHttpServer())
+      .patch(`/work-orders/${diagnosticFlow.workOrder.id}/start-operation`)
+      .set('Authorization', 'Bearer tenant-a')
+      .expect(409);
+
+    const directService = await createService('tenant-a', false, 'Quick Wash');
+    const directAppointment = await createAppointment('tenant-a', directService.id);
+    const directWorkOrder = await createWorkOrder('tenant-a', directAppointment.id);
+
+    await request(app.getHttpServer())
+      .patch(`/work-orders/${directWorkOrder.id}/pick-up`)
+      .set('Authorization', 'Bearer tenant-a')
+      .expect(409);
+
+    const completedDiagnosticFlow = await createCompletedDiagnosticFlow(
+      'tenant-a',
+      'Cooling System Diagnosis',
+    );
+    const quote = await createQuote('tenant-a', completedDiagnosticFlow.completedDiagnostic.id);
+    await sendQuote('tenant-a', quote.id);
+
+    await request(app.getHttpServer())
+      .patch(`/work-orders/${completedDiagnosticFlow.workOrder.id}/mark-ready`)
+      .set('Authorization', 'Bearer tenant-a')
+      .expect(409);
   });
 
   async function createService(
@@ -379,6 +450,54 @@ describe('AUTURNO API e2e', () => {
   ): Promise<{ id: string; status: string }> {
     const response = await request(app.getHttpServer())
       .patch(`/quotes/${quoteId}/reject`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    return response.body as { id: string; status: string };
+  }
+
+  async function startOperation(
+    token: TestToken,
+    workOrderId: string,
+  ): Promise<{ id: string; status: string }> {
+    const response = await request(app.getHttpServer())
+      .patch(`/work-orders/${workOrderId}/start-operation`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    return response.body as { id: string; status: string };
+  }
+
+  async function markReady(
+    token: TestToken,
+    workOrderId: string,
+  ): Promise<{ id: string; status: string }> {
+    const response = await request(app.getHttpServer())
+      .patch(`/work-orders/${workOrderId}/mark-ready`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    return response.body as { id: string; status: string };
+  }
+
+  async function closeWorkOrder(
+    token: TestToken,
+    workOrderId: string,
+  ): Promise<{ id: string; status: string }> {
+    const response = await request(app.getHttpServer())
+      .patch(`/work-orders/${workOrderId}/close`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    return response.body as { id: string; status: string };
+  }
+
+  async function pickUpWorkOrder(
+    token: TestToken,
+    workOrderId: string,
+  ): Promise<{ id: string; status: string }> {
+    const response = await request(app.getHttpServer())
+      .patch(`/work-orders/${workOrderId}/pick-up`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 

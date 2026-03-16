@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +18,78 @@ import { WorkOrdersService } from './work-orders.service';
 @UseGuards(AuthGuard, PermissionsGuard)
 export class WorkOrdersController {
   constructor(private readonly workOrdersService: WorkOrdersService) {}
+
+  @Patch(':id/start-operation')
+  @RequirePermissions('workorders.write')
+  async startOperation(
+    @CurrentUser() user: CurrentUserContext,
+    @Param('id') workOrderId: string,
+  ) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.workOrdersService.updateStatusInWorkshop(
+      user.workshopId,
+      workOrderId,
+      'in_operation',
+      user.id,
+    );
+  }
+
+  @Patch(':id/mark-ready')
+  @RequirePermissions('workorders.write')
+  async markReady(
+    @CurrentUser() user: CurrentUserContext,
+    @Param('id') workOrderId: string,
+  ) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.workOrdersService.updateStatusInWorkshop(
+      user.workshopId,
+      workOrderId,
+      'ready',
+      user.id,
+    );
+  }
+
+  @Patch(':id/close')
+  @RequirePermissions('workorders.write')
+  async close(
+    @CurrentUser() user: CurrentUserContext,
+    @Param('id') workOrderId: string,
+  ) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.workOrdersService.updateStatusInWorkshop(
+      user.workshopId,
+      workOrderId,
+      'closed',
+      user.id,
+    );
+  }
+
+  @Patch(':id/pick-up')
+  @RequirePermissions('workorders.write')
+  async pickUp(
+    @CurrentUser() user: CurrentUserContext,
+    @Param('id') workOrderId: string,
+  ) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.workOrdersService.updateStatusInWorkshop(
+      user.workshopId,
+      workOrderId,
+      'picked_up',
+      user.id,
+    );
+  }
 
   @Get(':id')
   @RequirePermissions('workorders.read')
