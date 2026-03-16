@@ -1,6 +1,7 @@
 import {
   Controller,
   ForbiddenException,
+  Get,
   Param,
   Post,
   UseGuards,
@@ -17,6 +18,22 @@ import { WorkOrdersService } from './work-orders.service';
 export class WorkOrdersController {
   constructor(private readonly workOrdersService: WorkOrdersService) {}
 
+  @Get(':id')
+  @RequirePermissions('workorders.read')
+  async findById(
+    @CurrentUser() user: CurrentUserContext,
+    @Param('id') workOrderId: string,
+  ) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.workOrdersService.findByIdInWorkshop(
+      user.workshopId,
+      workOrderId,
+    );
+  }
+
   @Post('from-appointment/:appointmentId')
   @RequirePermissions('workorders.write')
   async createFromAppointment(
@@ -30,6 +47,7 @@ export class WorkOrdersController {
     return await this.workOrdersService.createFromAppointment(
       user.workshopId,
       appointmentId,
+      user.id,
     );
   }
 }

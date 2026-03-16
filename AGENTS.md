@@ -7,6 +7,7 @@ Work on AUTURNO as a mobile-first workshop operations platform for mechanical se
 AUTURNO is NOT a generic appointment app.
 
 Correct framing:
+
 - workshop operating system
 - delivery promise engine
 - diagnosis-to-operation workflow platform
@@ -19,13 +20,17 @@ Your job is to help implement V1 safely, incrementally, and with minimal unneces
 ## Non-Negotiable Product Rules
 
 ### Business model
+
 Current model is closed B2B2C:
+
 - each workshop has its own workspace
 - each workshop has its own customer-facing experience
 - customers interact only with their workshop
 
 ### Explicitly out of V1
+
 Do NOT introduce any of these unless explicitly requested:
+
 - marketplace
 - public workshop search
 - public ratings or reputation
@@ -35,6 +40,7 @@ Do NOT introduce any of these unless explicitly requested:
 - multi-workshop discovery
 
 ### Core product principles
+
 - Capacity is measured in work hours, not number of cars.
 - Diagnosis and operation are separate concepts and must remain separate in model and workflow.
 - Delivery promises must be realistic, editable, and traceable.
@@ -46,7 +52,9 @@ Do NOT introduce any of these unless explicitly requested:
 ## Core Workflows
 
 ### Direct service flow
+
 Examples:
+
 - oil change
 - wheel alignment
 - balancing
@@ -54,6 +62,7 @@ Examples:
 - simple service
 
 Phases:
+
 - scheduled
 - in_operation
 - ready
@@ -61,7 +70,9 @@ Phases:
 - picked_up
 
 ### Diagnosis flow
+
 Examples:
+
 - brake noise
 - electrical issue
 - vibration
@@ -69,6 +80,7 @@ Examples:
 - unknown issue
 
 Phases:
+
 - reception
 - in_diagnosis
 - quote_sent
@@ -79,6 +91,7 @@ Phases:
 - picked_up
 
 Rules:
+
 - diagnosis promise comes before final delivery promise
 - approved quote moves to operation
 - rejected quote closes repair path but preserves diagnosis
@@ -90,6 +103,7 @@ Rules:
 Implement only V1 unless explicitly told otherwise.
 
 ### Included in V1
+
 - service catalog
 - appointments
 - work orders
@@ -103,6 +117,7 @@ Implement only V1 unless explicitly told otherwise.
 - workshop-based tenancy
 
 ### Excluded from V1
+
 - marketplace flows
 - public discovery
 - public ratings
@@ -119,6 +134,7 @@ Implement only V1 unless explicitly told otherwise.
 Security is a top priority.
 
 ### Required
+
 - Auth0 authenticates
 - backend authorizes
 - backend resolves roles and permissions from database
@@ -127,6 +143,7 @@ Security is a top priority.
 - critical actions must be auditable
 
 ### Roles
+
 - owner
 - admin
 - operator
@@ -134,6 +151,7 @@ Security is a top priority.
 - client
 
 ### Base permissions
+
 - workshop.manage
 - users.manage
 - services.manage
@@ -148,6 +166,7 @@ Security is a top priority.
 - metrics.read
 
 ### Audit examples
+
 - ETA changes
 - status transitions
 - diagnosis changes
@@ -159,6 +178,7 @@ Security is a top priority.
 ## Final Stack
 
 Use this stack unless explicitly told otherwise:
+
 - Frontend: Angular
 - Delivery: mobile-first responsive web app
 - Backend: NestJS
@@ -167,6 +187,7 @@ Use this stack unless explicitly told otherwise:
 - Architecture: API-first
 
 Important:
+
 - product does not change
 - domain model does not change
 - business rules do not change
@@ -177,6 +198,7 @@ Important:
 ## Architecture Rules
 
 ### Backend owns
+
 - auth integration
 - RBAC
 - tenancy enforcement
@@ -189,6 +211,7 @@ Important:
 - auditing
 
 ### Frontend owns
+
 - presentation
 - forms
 - navigation
@@ -202,19 +225,23 @@ Never put critical business rules in frontend code.
 ## Repository Rules
 
 ### Active structure
+
 Treat the current working repository structure as the source of truth.
 
 Preferred repo layout:
+
 - apps/api
 - apps/web
 
 ### Important
+
 - Do not create parallel architectures.
 - Do not duplicate modules in alternate trees.
 - Do not scaffold a second version of an already existing area.
 - Reuse and extend the currently active code layout instead of inventing a new one.
 
 ### Angular structure
+
 - auth
 - core
 - shared
@@ -222,6 +249,7 @@ Preferred repo layout:
 - workshop-portal
 
 ### Workshop portal areas
+
 - agenda
 - work-orders
 - diagnostics
@@ -231,6 +259,7 @@ Preferred repo layout:
 - metrics
 
 ### NestJS areas
+
 - auth
 - users
 - workshops
@@ -248,12 +277,14 @@ Preferred repo layout:
 ## Module Wiring Rules
 
 When working in NestJS:
+
 - if a service depends on another service, import the module that exports that dependency
 - if a controller or route uses a guard, ensure the containing module imports the module that exports that guard and its dependencies
 - prefer explicit module imports/exports over implicit assumptions
 - do not leave dependency wiring half-finished
 
 When working in Angular:
+
 - prefer standalone components if that is what the current app uses
 - keep route structure aligned with the existing app
 - do not invent a second app shell
@@ -263,7 +294,9 @@ When working in Angular:
 ## Environment and Secret Rules
 
 ### Frontend
+
 Only public client configuration may exist in Angular environment files:
+
 - apiBaseUrl
 - auth0Domain
 - auth0ClientId
@@ -272,7 +305,9 @@ Only public client configuration may exist in Angular environment files:
 Do not place secrets in frontend code.
 
 ### Backend
+
 Sensitive values must stay in backend env files only:
+
 - Mongo connection strings
 - Auth0 secrets
 - tokens
@@ -280,6 +315,7 @@ Sensitive values must stay in backend env files only:
 - private credentials
 
 ### Secret handling
+
 - Never print, copy, or move secret values into generated code, docs, prompts, or commits.
 - Treat .env, .env.local, credentials, tokens, passwords, and connection strings as sensitive.
 - Use placeholders in examples and committed files.
@@ -303,6 +339,7 @@ Sensitive values must stay in backend env files only:
 ## Execution Rules
 
 Always:
+
 - prioritize V1 over future ideas
 - preserve diagnosis vs operation separation
 - preserve multi-tenancy and backend-driven RBAC
@@ -315,6 +352,7 @@ Always:
 - do not redesign the product unless explicitly asked
 
 ### Priority order
+
 1. security and tenancy
 2. domain model correctness
 3. workflow correctness
@@ -328,6 +366,7 @@ Always:
 ## Output Rules
 
 ### When generating code
+
 - return complete files, not partial diffs, unless explicitly requested
 - keep names and paths consistent with the current repo
 - prefer minimal changes over rewrites
@@ -335,13 +374,17 @@ Always:
 - do not silently rename core concepts
 
 ### When generating architecture
+
 Return in this order:
+
 1. folder tree
 2. concise explanation
 3. implementation order
 
 ### When generating backend design
+
 Include:
+
 - modules
 - DTOs
 - schemas/entities
@@ -351,7 +394,9 @@ Include:
 - import/export wiring when relevant
 
 ### When generating frontend design
+
 Include:
+
 - routes
 - layouts
 - feature areas
@@ -359,7 +404,9 @@ Include:
 - mobile-first notes
 
 ### When generating endpoints
+
 Include:
+
 - method
 - route
 - purpose
@@ -380,6 +427,22 @@ Include:
 - Keep explanations short and implementation-focused.
 
 When uncertain:
+
 - inspect the current repo structure first
 - prefer adapting to what already exists
 - do not assume a clean scaffold if the repo is already partially implemented
+
+## Validation Commands
+
+When working in apps/api:
+
+- run TypeScript compilation after backend changes
+- prefer existing project scripts if available
+- if a module is changed, verify Nest wiring and imports
+- verify Mongo schemas compile correctly with nullable fields typed explicitly
+
+When working in apps/web:
+
+- verify Angular build or TypeScript compilation after relevant changes
+
+Do not claim success without running a real validation command if one is available.

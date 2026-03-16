@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { AuditModule } from '../audit/audit.module';
 import { AppointmentsModule } from '../appointments/appointments.module';
 import { AuthModule } from '../auth/auth.module';
 import { ServicesModule } from '../services/services.module';
@@ -10,6 +11,7 @@ import { WorkOrdersService } from './work-orders.service';
 
 @Module({
   imports: [
+    AuditModule,
     AuthModule,
     AppointmentsModule,
     ServicesModule,

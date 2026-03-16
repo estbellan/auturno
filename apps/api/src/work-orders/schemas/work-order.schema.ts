@@ -3,7 +3,16 @@ import { HydratedDocument } from 'mongoose';
 
 export type WorkOrderDocument = HydratedDocument<WorkOrder>;
 export type WorkOrderType = 'direct' | 'diagnostic';
-export type WorkOrderPhase = 'scheduled' | 'reception';
+export type WorkOrderStatus =
+  | 'scheduled'
+  | 'reception'
+  | 'in_diagnosis'
+  | 'quote_sent'
+  | 'awaiting_approval'
+  | 'in_operation'
+  | 'ready'
+  | 'closed'
+  | 'picked_up';
 
 @Schema({
   collection: 'work_orders',
@@ -19,8 +28,21 @@ export class WorkOrder {
   @Prop({ required: true, enum: ['direct', 'diagnostic'] })
   type!: WorkOrderType;
 
-  @Prop({ required: true, enum: ['scheduled', 'reception'] })
-  phase!: WorkOrderPhase;
+  @Prop({
+    required: true,
+    enum: [
+      'scheduled',
+      'reception',
+      'in_diagnosis',
+      'quote_sent',
+      'awaiting_approval',
+      'in_operation',
+      'ready',
+      'closed',
+      'picked_up',
+    ],
+  })
+  status!: WorkOrderStatus;
 
   @Prop({ required: true, trim: true })
   clientId!: string;

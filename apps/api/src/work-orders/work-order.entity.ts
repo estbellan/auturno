@@ -1,11 +1,22 @@
 export type WorkOrderType = 'direct' | 'diagnostic';
+export type WorkOrderStatus =
+  | 'scheduled'
+  | 'reception'
+  | 'in_diagnosis'
+  | 'quote_sent'
+  | 'awaiting_approval'
+  | 'in_operation'
+  | 'ready'
+  | 'closed'
+  | 'picked_up';
 
 export interface WorkOrderEntity {
   id: string;
   workshopId: string;
   appointmentId: string;
   type: WorkOrderType;
-  phase: 'scheduled' | 'reception';
+  status: WorkOrderStatus;
+  phase: WorkOrderStatus;
   clientId: string;
   vehicleId: string;
   serviceId: string;

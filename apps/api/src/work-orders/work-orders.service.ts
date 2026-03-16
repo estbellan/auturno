@@ -1,10 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import { AuditService } from '../audit/audit.service';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { ServicesService } from '../services/services.service';
-import { WorkOrder, WorkOrderDocument } from './schemas/work-order.schema';
+import {
+  WorkOrder,
+  WorkOrderDocument,
+  WorkOrderStatus,
+} from './schemas/work-order.schema';
 import { WorkOrderEntity } from './work-order.entity';
 
 @Injectable()
@@ -12,6 +21,7 @@ export class WorkOrdersService {
   constructor(
     @InjectModel(WorkOrder.name)
     private readonly workOrderModel: Model<WorkOrderDocument>,
+    private readonly auditService: AuditService,
     private readonly appointmentsService: AppointmentsService,
     private readonly servicesService: ServicesService,
   ) {}
@@ -19,6 +29,7 @@ export class WorkOrdersService {
   async createFromAppointment(
     workshopId: string,
     appointmentId: string,
+    actorUserId: string,
   ): Promise<WorkOrderEntity> {
     const existing = await this.workOrderModel
       .findOne({
@@ -52,7 +63,7 @@ export class WorkOrdersService {
       workshopId,
       appointmentId: appointment.id,
       type,
-      phase: type === 'diagnostic' ? 'reception' : 'scheduled',
+      status: type === 'diagnostic' ? 'reception' : 'scheduled',
       clientId: appointment.clientId,
       vehicleId: appointment.vehicleId,
       serviceId: appointment.serviceId,
@@ -66,7 +77,103 @@ export class WorkOrdersService {
         type === 'diagnostic' ? null : firstPromiseDate,
     });
 
+    await this.auditService.create({
+      workshopId,
+      entityType: 'work_order',
+      entityId: created._id.toString(),
+      action: 'work_order_created',
+      actorUserId,
+      metadata: {
+        appointmentId: appointment.id,
+        type,
+        status: created.status,
+      },
+    });
+
     return this.toEntity(created);
+  }
+
+  async findByIdInWorkshop(
+    workshopId: string,
+    workOrderId: string,
+  ): Promise<WorkOrderEntity> {
+    const workOrder = await this.workOrderModel
+      .findOne({
+        _id: workOrderId,
+        workshopId,
+      })
+      .exec();
+
+    if (!workOrder) {
+      throw new NotFoundException('Work order not found in workshop.');
+    }
+
+    return this.toEntity(workOrder);
+  }
+
+  async updateStatusInWorkshop(
+    workshopId: string,
+    workOrderId: string,
+    nextStatus: WorkOrderStatus,
+    actorUserId: string,
+  ): Promise<WorkOrderEntity> {
+    const workOrder = await this.workOrderModel
+      .findOne({
+        _id: workOrderId,
+        workshopId,
+      })
+      .exec();
+
+    if (!workOrder) {
+      throw new NotFoundException('Work order not found in workshop.');
+    }
+
+    if (!this.canTransition(workOrder.status, nextStatus)) {
+      throw new ConflictException(
+        `Work order cannot transition from ${workOrder.status} to ${nextStatus}.`,
+      );
+    }
+
+    const previousStatus = workOrder.status;
+    workOrder.status = nextStatus;
+    await workOrder.save();
+
+    await this.auditService.create({
+      workshopId,
+      entityType: 'work_order',
+      entityId: workOrder._id.toString(),
+      action: 'work_order_status_changed',
+      actorUserId,
+      metadata: {
+        fromStatus: previousStatus,
+        toStatus: nextStatus,
+      },
+    });
+
+    return this.toEntity(workOrder);
+  }
+
+  private canTransition(
+    currentStatus: WorkOrderStatus,
+    nextStatus: WorkOrderStatus,
+  ): boolean {
+    if (currentStatus === nextStatus) {
+      return true;
+    }
+
+    const allowedTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
+      scheduled: ['in_operation', 'ready', 'closed', 'picked_up'],
+      reception: ['in_diagnosis'],
+      in_diagnosis: ['quote_sent'],
+      quote_sent: ['awaiting_approval', 'in_operation', 'closed'],
+      awaiting_approval: ['in_operation', 'closed'],
+      in_operation: ['ready', 'closed'],
+      ready: ['closed', 'picked_up'],
+      closed: ['picked_up'],
+      picked_up: [],
+    };
+
+    return allowedTransitions[currentStatus].includes(nextStatus);
   }
 
   private toEntity(workOrder: WorkOrderDocument): WorkOrderEntity {
@@ -75,7 +182,8 @@ export class WorkOrdersService {
       workshopId: workOrder.workshopId,
       appointmentId: workOrder.appointmentId,
       type: workOrder.type,
-      phase: workOrder.phase,
+      status: workOrder.status,
+      phase: workOrder.status,
       clientId: workOrder.clientId,
       vehicleId: workOrder.vehicleId,
       serviceId: workOrder.serviceId,
