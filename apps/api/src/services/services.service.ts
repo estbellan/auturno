@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
@@ -14,14 +18,36 @@ export class ServicesService {
   ) {}
 
   async create(workshopId: string, input: CreateServiceDto): Promise<ServiceEntity> {
+    const normalizedName = this.normalizeName(input.name);
+    const existing = await this.serviceModel
+      .findOne({
+        workshopId,
+        normalizedName,
+      })
+      .exec();
+
+    if (existing) {
+      throw new ConflictException('Service already exists in workshop.');
+    }
+
     const created = await this.serviceModel.create({
       workshopId,
       name: input.name,
+      normalizedName,
       estimatedDurationHours: input.estimatedDurationHours,
       requiresDiagnostic: input.requiresDiagnostic,
     });
 
     return this.toEntity(created);
+  }
+
+  async listInWorkshop(workshopId: string): Promise<ServiceEntity[]> {
+    const services = await this.serviceModel
+      .find({ workshopId })
+      .sort({ name: 1, createdAt: -1 })
+      .exec();
+
+    return services.map((service) => this.toEntity(service));
   }
 
   async findByIdInWorkshop(workshopId: string, serviceId: string): Promise<ServiceEntity> {
@@ -45,5 +71,9 @@ export class ServicesService {
       estimatedDurationHours: service.estimatedDurationHours,
       requiresDiagnostic: service.requiresDiagnostic,
     };
+  }
+
+  private normalizeName(name: string): string {
+    return name.trim().replace(/\s+/g, ' ').toLowerCase();
   }
 }

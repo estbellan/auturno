@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getConnectionToken, getModelToken } from '@nestjs/mongoose';
-import { Connection, Model } from 'mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import * as request from 'supertest';
 
 import { AppModule } from '../src/app.module';
@@ -23,6 +23,8 @@ import {
 } from '../src/work-orders/schemas/work-order.schema';
 
 jest.setTimeout(60000);
+
+const E2E_DATABASE_NAME = createUniqueE2eDatabaseName();
 
 type TestToken = 'tenant-a' | 'tenant-b';
 
@@ -103,6 +105,8 @@ describe('AUTURNO API e2e', () => {
   let connection: Connection;
   let auditEventModel: Model<AuditEventDocument>;
   let workOrderModel: Model<WorkOrderDocument>;
+  let customerSequence = 0;
+  let vehicleSequence = 0;
 
   beforeAll(async () => {
     process.env.MONGODB_URI = resolveE2eMongoUri();
@@ -138,6 +142,9 @@ describe('AUTURNO API e2e', () => {
     if (connection?.readyState === 1) {
       await connection.dropDatabase();
     }
+
+    customerSequence = 0;
+    vehicleSequence = 0;
   });
 
   afterAll(async () => {
@@ -158,6 +165,214 @@ describe('AUTURNO API e2e', () => {
     expect(workOrder.type).toBe('direct');
     expect(workOrder.status).toBe('scheduled');
     await expectAuditEvent('workshop-a', 'work_order', workOrder.id, 'work_order_created');
+  });
+
+  it('creates and lists customers within a workshop and hides them from other tenants', async () => {
+    const customer = await createCustomer('tenant-a', {
+      name: 'Maria Gomez',
+      phone: '+54 11 5555 0001',
+      email: 'maria@test.local',
+    });
+
+    expect(customer.name).toBe('Maria Gomez');
+    expect(customer.workshopId).toBe('workshop-a');
+
+    const tenantAListResponse = await request(app.getHttpServer())
+      .get('/customers')
+      .set('Authorization', 'Bearer tenant-a')
+      .expect(200);
+
+    expect(tenantAListResponse.body).toHaveLength(1);
+    expect(tenantAListResponse.body[0]).toMatchObject({
+      id: customer.id,
+      workshopId: 'workshop-a',
+      name: 'Maria Gomez',
+    });
+
+    const tenantBListResponse = await request(app.getHttpServer())
+      .get('/customers')
+      .set('Authorization', 'Bearer tenant-b')
+      .expect(200);
+
+    expect(tenantBListResponse.body).toEqual([]);
+  });
+
+  it('creates and lists vehicles by customer, rejects workshop plate duplicates, and hides them from other tenants', async () => {
+    const customer = await createCustomer('tenant-a', {
+      name: 'Laura Driver',
+    });
+
+    const vehicle = await createVehicle('tenant-a', customer.id, {
+      plate: 'ab 123 cd',
+      brand: 'Ford',
+      model: 'Fiesta',
+      year: 2018,
+    });
+
+    expect(vehicle.customerId).toBe(customer.id);
+    expect(vehicle.plate).toBe('AB 123 CD');
+
+    const listResponse = await request(app.getHttpServer())
+      .get('/vehicles')
+      .query({ customerId: customer.id })
+      .set('Authorization', 'Bearer tenant-a')
+      .expect(200);
+
+    expect(listResponse.body).toHaveLength(1);
+    expect(listResponse.body[0]).toMatchObject({
+      id: vehicle.id,
+      customerId: customer.id,
+      workshopId: 'workshop-a',
+    });
+
+    await request(app.getHttpServer())
+      .post('/vehicles')
+      .set('Authorization', 'Bearer tenant-a')
+      .send({
+        customerId: customer.id,
+        plate: 'AB-123-CD',
+      })
+      .expect(409);
+
+    const otherTenantCustomer = await createCustomer('tenant-b', {
+      name: 'Tenant B Driver',
+    });
+
+    await request(app.getHttpServer())
+      .get('/vehicles')
+      .query({ customerId: otherTenantCustomer.id })
+      .set('Authorization', 'Bearer tenant-b')
+      .expect(200, []);
+
+    await request(app.getHttpServer())
+      .get('/vehicles')
+      .query({ customerId: customer.id })
+      .set('Authorization', 'Bearer tenant-b')
+      .expect(404);
+  });
+
+  it('enforces customer and vehicle consistency when creating appointments', async () => {
+    const service = await createService('tenant-a', false, 'Alignment');
+    const customer = await createCustomer('tenant-a', {
+      name: 'Valid Customer',
+    });
+    const otherCustomer = await createCustomer('tenant-a', {
+      name: 'Other Customer',
+    });
+    const vehicle = await createVehicle('tenant-a', customer.id, {
+      plate: 'TA-100',
+    });
+
+    await request(app.getHttpServer())
+      .post('/appointments')
+      .set('Authorization', 'Bearer tenant-a')
+      .send({
+        clientId: createMissingObjectId(),
+        vehicleId: vehicle.id,
+        serviceId: service.id,
+        scheduledStartAt: '2026-03-16T10:00:00.000Z',
+      })
+      .expect(404);
+
+    await request(app.getHttpServer())
+      .post('/appointments')
+      .set('Authorization', 'Bearer tenant-a')
+      .send({
+        clientId: customer.id,
+        vehicleId: createMissingObjectId(),
+        serviceId: service.id,
+        scheduledStartAt: '2026-03-16T10:00:00.000Z',
+      })
+      .expect(404);
+
+    await request(app.getHttpServer())
+      .post('/appointments')
+      .set('Authorization', 'Bearer tenant-a')
+      .send({
+        clientId: otherCustomer.id,
+        vehicleId: vehicle.id,
+        serviceId: service.id,
+        scheduledStartAt: '2026-03-16T10:00:00.000Z',
+      })
+      .expect(404);
+
+    const validAppointmentResponse = await request(app.getHttpServer())
+      .post('/appointments')
+      .set('Authorization', 'Bearer tenant-a')
+      .send({
+        clientId: customer.id,
+        vehicleId: vehicle.id,
+        serviceId: service.id,
+        scheduledStartAt: '2026-03-16T10:00:00.000Z',
+      })
+      .expect(201);
+
+    expect(validAppointmentResponse.body).toMatchObject({
+      workshopId: 'workshop-a',
+      clientId: customer.id,
+      vehicleId: vehicle.id,
+      serviceId: service.id,
+    });
+  });
+
+  it('covers the intake happy path with customer, vehicle, appointment, and work-order creation', async () => {
+    const service = await createService('tenant-a', false, 'Battery Replacement');
+    const customer = await createCustomer('tenant-a', {
+      name: 'Happy Path Customer',
+      phone: '+54 11 5555 0101',
+    });
+    const vehicle = await createVehicle('tenant-a', customer.id, {
+      plate: 'HP-101',
+      brand: 'Toyota',
+      model: 'Etios',
+      year: 2019,
+    });
+    const appointment = await createAppointment('tenant-a', service.id, {
+      customerId: customer.id,
+      vehicleId: vehicle.id,
+    });
+    const workOrder = await createWorkOrder('tenant-a', appointment.id);
+
+    expect(workOrder).toMatchObject({
+      workshopId: 'workshop-a',
+      appointmentId: appointment.id,
+      type: 'direct',
+      status: 'scheduled',
+      clientId: customer.id,
+      vehicleId: vehicle.id,
+      serviceId: service.id,
+    });
+  });
+
+  it('lists tenant appointments ordered by scheduled start and excludes other workshops', async () => {
+    const service = await createService('tenant-a', false, 'Agenda Service');
+    const laterAppointment = await createAppointment('tenant-a', service.id, {
+      scheduledStartAt: '2026-03-16T12:00:00.000Z',
+    });
+    const earlierAppointment = await createAppointment('tenant-a', service.id, {
+      scheduledStartAt: '2026-03-16T08:00:00.000Z',
+    });
+
+    await createAppointment('tenant-b', (await createService('tenant-b', false, 'Other Tenant Service')).id, {
+      scheduledStartAt: '2026-03-16T09:00:00.000Z',
+    });
+
+    const response = await request(app.getHttpServer())
+      .get('/appointments')
+      .set('Authorization', 'Bearer tenant-a')
+      .expect(200);
+
+    expect(response.body).toHaveLength(2);
+    expect(response.body.map((appointment: { id: string }) => appointment.id)).toEqual([
+      earlierAppointment.id,
+      laterAppointment.id,
+    ]);
+    expect(
+      response.body.every(
+        (appointment: { workshopId: string }) =>
+          appointment.workshopId === 'workshop-a',
+      ),
+    ).toBe(true);
   });
 
   it('covers direct work-order operational actions', async () => {
@@ -352,18 +567,95 @@ describe('AUTURNO API e2e', () => {
     return response.body as { id: string; requiresDiagnostic: boolean };
   }
 
+  async function createCustomer(
+    token: TestToken,
+    input?: {
+      name?: string;
+      phone?: string;
+      email?: string;
+    },
+  ): Promise<{ id: string; workshopId: string; name: string }> {
+    customerSequence += 1;
+
+    const response = await request(app.getHttpServer())
+      .post('/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: input?.name ?? `${token} Customer ${customerSequence}`,
+        phone: input?.phone,
+        email: input?.email,
+      })
+      .expect(201);
+
+    return response.body as { id: string; workshopId: string; name: string };
+  }
+
+  async function createVehicle(
+    token: TestToken,
+    customerId: string,
+    input?: {
+      plate?: string;
+      brand?: string;
+      model?: string;
+      year?: number;
+    },
+  ): Promise<{
+    id: string;
+    workshopId: string;
+    customerId: string;
+    plate: string;
+    brand: string | null;
+    model: string | null;
+    year: number | null;
+  }> {
+    vehicleSequence += 1;
+
+    const platePrefix = token === 'tenant-a' ? 'TA' : 'TB';
+    const response = await request(app.getHttpServer())
+      .post('/vehicles')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        customerId,
+        plate: input?.plate ?? `${platePrefix}-${vehicleSequence}`,
+        brand: input?.brand,
+        model: input?.model,
+        year: input?.year,
+      })
+      .expect(201);
+
+    return response.body as {
+      id: string;
+      workshopId: string;
+      customerId: string;
+      plate: string;
+      brand: string | null;
+      model: string | null;
+      year: number | null;
+    };
+  }
+
   async function createAppointment(
     token: TestToken,
     serviceId: string,
+    input?: {
+      customerId?: string;
+      vehicleId?: string;
+      scheduledStartAt?: string;
+    },
   ): Promise<{ id: string }> {
+    const customerId = input?.customerId ?? (await createCustomer(token)).id;
+    const vehicleId =
+      input?.vehicleId ?? (await createVehicle(token, customerId)).id;
+
     const response = await request(app.getHttpServer())
       .post('/appointments')
       .set('Authorization', `Bearer ${token}`)
       .send({
-        clientId: `${token}-client`,
-        vehicleId: `${token}-vehicle`,
+        clientId: customerId,
+        vehicleId,
         serviceId,
-        scheduledStartAt: '2026-03-16T10:00:00.000Z',
+        scheduledStartAt:
+          input?.scheduledStartAt ?? '2026-03-16T10:00:00.000Z',
       })
       .expect(201);
 
@@ -373,13 +665,31 @@ describe('AUTURNO API e2e', () => {
   async function createWorkOrder(
     token: TestToken,
     appointmentId: string,
-  ): Promise<{ id: string; type: string; status: string }> {
+  ): Promise<{
+    id: string;
+    workshopId: string;
+    appointmentId: string;
+    type: string;
+    status: string;
+    clientId: string;
+    vehicleId: string;
+    serviceId: string;
+  }> {
     const response = await request(app.getHttpServer())
       .post(`/work-orders/from-appointment/${appointmentId}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(201);
 
-    return response.body as { id: string; type: string; status: string };
+    return response.body as {
+      id: string;
+      workshopId: string;
+      appointmentId: string;
+      type: string;
+      status: string;
+      clientId: string;
+      vehicleId: string;
+      serviceId: string;
+    };
   }
 
   async function createDiagnosticDraft(
@@ -593,13 +903,19 @@ describe('AUTURNO API e2e', () => {
       ],
     };
   }
+
+  function createMissingObjectId(): string {
+    return new Types.ObjectId().toString();
+  }
 });
 
 function resolveE2eMongoUri(): string {
   const explicitUri = process.env.E2E_MONGODB_URI?.trim();
 
   if (explicitUri) {
-    return explicitUri;
+    const url = new URL(explicitUri);
+    url.pathname = `/${E2E_DATABASE_NAME}`;
+    return url.toString();
   }
 
   const baseUri = process.env.MONGODB_URI?.trim();
@@ -611,6 +927,12 @@ function resolveE2eMongoUri(): string {
   }
 
   const url = new URL(baseUri);
-  url.pathname = '/auturno_api_e2e';
+  url.pathname = `/${E2E_DATABASE_NAME}`;
   return url.toString();
+}
+
+function createUniqueE2eDatabaseName(): string {
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  return `auturno_api_e2e_${timestamp}_${randomSuffix}`;
 }

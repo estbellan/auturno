@@ -446,3 +446,24 @@ When working in apps/web:
 - verify Angular build or TypeScript compilation after relevant changes
 
 Do not claim success without running a real validation command if one is available.
+
+## Angular Template and Control Flow Rules
+
+When working in Angular templates:
+
+- Prefer Angular built-in control flow syntax:
+  - `@if (...) { ... }`
+  - `@else { ... }`
+  - `@for (...; track ...) { ... }`
+  - `@switch / @case / @default`
+- Do not introduce new `*ngIf`, `*ngFor`, or `*ngSwitch` usage unless explicitly required for compatibility.
+- If touching an existing template area that still uses legacy structural directives, prefer migrating that local area to the modern built-in control flow syntax as part of the change, as long as the change stays safe and scoped.
+- When rendering collections with `@for`, always provide an explicit `track` expression when there is a stable identifier.
+- Keep template conditions readable; if the condition becomes too complex, move decision logic to the component class through computed/view-model helpers instead of nesting too much logic in HTML.
+- Do not keep dead inline structural syntax or half-migrated template branches.
+- Preserve the existing app structure and do not refactor unrelated templates just for style.
+
+Notes:
+
+- Modern Angular control flow is the preferred template syntax for this repo.
+- Migrations should be incremental and scoped to the files touched by the task.

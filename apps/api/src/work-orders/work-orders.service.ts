@@ -111,6 +111,15 @@ export class WorkOrdersService {
     return this.toEntity(workOrder);
   }
 
+  async listInWorkshop(workshopId: string): Promise<WorkOrderEntity[]> {
+    const workOrders = await this.workOrderModel
+      .find({ workshopId })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    return workOrders.map((workOrder) => this.toEntity(workOrder));
+  }
+
   async updateStatusInWorkshop(
     workshopId: string,
     workOrderId: string,

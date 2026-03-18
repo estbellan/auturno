@@ -14,6 +14,9 @@ export class Service {
   @Prop({ required: true, trim: true })
   name!: string;
 
+  @Prop({ required: true, trim: true })
+  normalizedName!: string;
+
   @Prop({ required: true, min: 0 })
   estimatedDurationHours!: number;
 
@@ -22,3 +25,5 @@ export class Service {
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);
+
+ServiceSchema.index({ workshopId: 1, normalizedName: 1 }, { unique: true });

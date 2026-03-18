@@ -19,6 +19,16 @@ import { WorkOrdersService } from './work-orders.service';
 export class WorkOrdersController {
   constructor(private readonly workOrdersService: WorkOrdersService) {}
 
+  @Get()
+  @RequirePermissions('workorders.read')
+  async list(@CurrentUser() user: CurrentUserContext) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.workOrdersService.listInWorkshop(user.workshopId);
+  }
+
   @Patch(':id/start-operation')
   @RequirePermissions('workorders.write')
   async startOperation(

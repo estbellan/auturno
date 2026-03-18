@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +18,16 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 @UseGuards(AuthGuard, PermissionsGuard)
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
+
+  @Get()
+  @RequirePermissions('appointments.manage')
+  async list(@CurrentUser() user: CurrentUserContext) {
+    if (!user.workshopId) {
+      throw new ForbiddenException('User is not attached to a workshop yet.');
+    }
+
+    return await this.appointmentsService.listInWorkshop(user.workshopId);
+  }
 
   @Post()
   @RequirePermissions('appointments.manage')

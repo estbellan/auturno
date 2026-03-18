@@ -11,4 +11,11 @@ export const appRoutes: Routes = [
     path: 'auth/login',
     component: LoginPageComponent,
   },
+  {
+    path: 'workshop',
+    loadChildren: () =>
+      import('./workshop-portal/workshop-portal.routes').then(
+        (module) => module.WORKSHOP_PORTAL_ROUTES,
+      ),
+  },
 ];

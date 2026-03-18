@@ -2,7 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import { CustomersService } from '../customers/customers.service';
 import { ServicesService } from '../services/services.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
 import { AppointmentEntity } from './appointment.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { Appointment, AppointmentDocument } from './schemas/appointment.schema';
@@ -12,13 +14,28 @@ export class AppointmentsService {
   constructor(
     @InjectModel(Appointment.name)
     private readonly appointmentModel: Model<AppointmentDocument>,
+    private readonly customersService: CustomersService,
     private readonly servicesService: ServicesService,
+    private readonly vehiclesService: VehiclesService,
   ) {}
 
   async create(
     workshopId: string,
     input: CreateAppointmentDto,
   ): Promise<AppointmentEntity> {
+    await this.customersService.findByIdInWorkshop(workshopId, input.clientId);
+
+    const vehicle = await this.vehiclesService.findByIdInWorkshop(
+      workshopId,
+      input.vehicleId,
+    );
+
+    if (vehicle.customerId !== input.clientId) {
+      throw new NotFoundException(
+        'Vehicle does not belong to the selected customer in workshop.',
+      );
+    }
+
     const service = await this.servicesService.findByIdInWorkshop(
       workshopId,
       input.serviceId,
@@ -34,6 +51,15 @@ export class AppointmentsService {
     });
 
     return this.toEntity(created);
+  }
+
+  async listInWorkshop(workshopId: string): Promise<AppointmentEntity[]> {
+    const appointments = await this.appointmentModel
+      .find({ workshopId })
+      .sort({ scheduledStartAt: 1, createdAt: 1 })
+      .exec();
+
+    return appointments.map((appointment) => this.toEntity(appointment));
   }
 
   async findByIdInWorkshop(

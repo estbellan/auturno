@@ -6,10 +6,12 @@ import { AppController } from './app.controller';
 import { AuditModule } from './audit/audit.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
+import { CustomersModule } from './customers/customers.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { ServicesModule } from './services/services.module';
 import { UsersModule } from './users/users.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
 import { WorkOrdersModule } from './work-orders/work-orders.module';
 import { WorkshopsModule } from './workshops/workshops.module';
 
@@ -30,6 +32,8 @@ import { WorkshopsModule } from './workshops/workshops.module';
     UsersModule,
     WorkshopsModule,
     ServicesModule,
+    CustomersModule,
+    VehiclesModule,
     AppointmentsModule,
     WorkOrdersModule,
     DiagnosticsModule,

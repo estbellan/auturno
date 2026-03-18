@@ -6,39 +6,42 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { CurrentUserContext } from '../auth/types';
-import { CreateServiceDto } from './dto/create-service.dto';
-import { ServicesService } from './services.service';
+import { CustomersService } from './customers.service';
+import { CreateCustomerDto } from './dto/create-customer.dto';
 
-@Controller('services')
+@Controller('customers')
 @UseGuards(AuthGuard, PermissionsGuard)
-export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+export class CustomersController {
+  constructor(private readonly customersService: CustomersService) {}
 
   @Get()
-  @RequirePermissions('services.manage')
+  @RequirePermissions('clients.read')
   async list(@CurrentUser() user: CurrentUserContext) {
-    if (!user.workshopId) {
-      throw new ForbiddenException('User is not attached to a workshop yet.');
-    }
-
-    return await this.servicesService.listInWorkshop(user.workshopId);
+    const workshopId = this.requireWorkshopId(user);
+    return await this.customersService.listInWorkshop(workshopId);
   }
 
   @Post()
-  @RequirePermissions('services.manage')
+  @RequirePermissions('clients.write')
   async create(
     @CurrentUser() user: CurrentUserContext,
-    @Body() input: CreateServiceDto,
+    @Body() input: CreateCustomerDto,
   ) {
+    const workshopId = this.requireWorkshopId(user);
+    return await this.customersService.create(workshopId, input);
+  }
+
+  private requireWorkshopId(user: CurrentUserContext): string {
     if (!user.workshopId) {
       throw new ForbiddenException('User is not attached to a workshop yet.');
     }
 
-    return await this.servicesService.create(user.workshopId, input);
+    return user.workshopId;
   }
 }
