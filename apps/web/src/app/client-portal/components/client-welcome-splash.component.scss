@@ -1,0 +1,124 @@
+
+    /* ── Overlay ──────────────────────────────────────────────────────────── */
+    .splash-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: var(--at-z-modal, 900);
+      background: var(--at-scrim);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: var(--at-sp-4);
+      animation: at-fade-in var(--at-dur-med1) var(--at-ease-std);
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────── */
+    .splash-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--at-surface-1);
+      border-radius: var(--at-shape-xl, 28px) var(--at-shape-xl, 28px) var(--at-shape-lg) var(--at-shape-lg);
+      border: 1px solid var(--at-outline-variant);
+      padding: var(--at-sp-6) var(--at-sp-6) calc(var(--at-sp-6) + env(safe-area-inset-bottom, 0px));
+      display: grid;
+      gap: var(--at-sp-4);
+      animation: at-slide-up var(--at-dur-med2) var(--at-ease-std);
+    }
+
+    @media (min-width: 600px) {
+      .splash-overlay { align-items: center; }
+      .splash-card { border-radius: var(--at-shape-xl, 28px); }
+    }
+
+    /* ── Step dots ────────────────────────────────────────────────────────── */
+    .splash-card__dots {
+      display: flex;
+      justify-content: center;
+      gap: var(--at-sp-1);
+    }
+
+    .splash-card__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--at-outline-variant);
+      transition: background var(--at-dur-short3) var(--at-ease-std),
+                  width    var(--at-dur-short3) var(--at-ease-std);
+
+      &.active {
+        width: 24px;
+        border-radius: 4px;
+        background: var(--at-primary);
+      }
+    }
+
+    /* ── Icon ─────────────────────────────────────────────────────────────── */
+    .splash-card__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--at-primary-container);
+      margin: 0 auto;
+
+      .ms {
+        font-size: 36px;
+        color: var(--at-on-primary-container);
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 36;
+      }
+    }
+
+    /* ── Text ─────────────────────────────────────────────────────────────── */
+    .splash-card__title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--at-on-surface);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .splash-card__body {
+      margin: 0;
+      font-size: 15px;
+      color: var(--at-on-surface-var);
+      text-align: center;
+      line-height: 1.55;
+    }
+
+    /* ── Actions ──────────────────────────────────────────────────────────── */
+    .splash-card__actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--at-sp-2);
+    }
+
+    .splash-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--at-sp-1);
+      width: 100%;
+      padding: var(--at-sp-3) var(--at-sp-4);
+      border-radius: var(--at-shape-full);
+      border: none;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity var(--at-dur-short3) var(--at-ease-std);
+
+      &:hover { opacity: 0.88; }
+    }
+
+    .splash-btn--primary {
+      background: var(--at-primary);
+      color: var(--at-on-primary);
+    }
+
+    .splash-btn--ghost {
+      background: transparent;
+      color: var(--at-on-surface-var);
+    }

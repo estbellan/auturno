@@ -3,6 +3,8 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -14,6 +16,7 @@ import { RequirePermissions } from '../auth/permissions.decorator';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { CurrentUserContext } from '../auth/types';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehiclesService } from './vehicles.service';
 
 @Controller('vehicles')
@@ -39,6 +42,17 @@ export class VehiclesController {
   ) {
     const workshopId = this.requireWorkshopId(user);
     return await this.vehiclesService.create(workshopId, input);
+  }
+
+  @Patch(':id')
+  @RequirePermissions('clients.write')
+  async update(
+    @CurrentUser() user: CurrentUserContext,
+    @Param('id') vehicleId: string,
+    @Body() input: UpdateVehicleDto,
+  ) {
+    const workshopId = this.requireWorkshopId(user);
+    return await this.vehiclesService.update(workshopId, vehicleId, input);
   }
 
   private requireWorkshopId(user: CurrentUserContext): string {

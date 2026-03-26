@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 
 @Component({
   selector: 'at-diagnostics-page',
   standalone: true,
   imports: [PageShellComponent],
-  template: '<at-page-shell title="Diagnostics" description="Diagnosis findings and recommendations capture, strictly separated from operation execution." />'
+  templateUrl: './diagnostics-page.component.html',
 })
-export class DiagnosticsPageComponent {}
+export class DiagnosticsPageComponent {
+  readonly i18n = inject(I18nService);
+}

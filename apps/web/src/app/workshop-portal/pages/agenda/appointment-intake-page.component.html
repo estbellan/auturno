@@ -1,0 +1,244 @@
+<section class="intake-page">
+  <a class="back-link" routerLink="/workshop/agenda">{{ i18n.t('intake.back') }}</a>
+
+  <at-page-shell
+    icon="event_note"
+    [title]="i18n.t('intake.title')"
+    [description]="i18n.t('intake.description')"
+  />
+
+  <section class="card form-card">
+    <form class="intake-form" (ngSubmit)="submit()">
+      <section class="stack-section">
+        <div class="section-heading">
+          <div>
+            <p class="preview-label">{{ i18n.t('common.customer') }}</p>
+            <strong>{{ i18n.t('intake.customerSelectCopy') }}</strong>
+          </div>
+          <div class="mode-switch">
+            <button
+              type="button"
+              class="mode-chip"
+              [class.active]="customerMode === 'select'"
+              [disabled]="customersLoading || !customers.length"
+              (click)="setCustomerMode('select')"
+            >
+              {{ i18n.t('common.select') }}
+            </button>
+            <button
+              type="button"
+              class="mode-chip"
+              [class.active]="customerMode === 'create'"
+              [disabled]="customersLoading"
+              (click)="setCustomerMode('create')"
+            >
+              {{ i18n.t('common.new') }}
+            </button>
+          </div>
+        </div>
+
+        @if (customersLoading) {
+          <div class="status-card neutral">{{ i18n.t('intake.customerLoading') }}</div>
+        } @else if (customerMode === 'select' && customers.length) {
+          <label class="field">
+            <span>{{ i18n.t('common.customer') }}</span>
+            <select
+              name="clientId"
+              [(ngModel)]="form.clientId"
+              required
+              (ngModelChange)="onCustomerSelectionChange()"
+            >
+              <option value="" disabled>{{ i18n.t('common.select') }} {{ i18n.t('common.customer') }}</option>
+              @for (customer of customers; track customer.id) {
+                <option [value]="customer.id">{{ customer.name }}</option>
+              }
+            </select>
+          </label>
+
+          @if (selectedCustomer) {
+            <section class="inline-summary">
+              <span>{{ selectedCustomer.name }}</span>
+              <span>{{ selectedCustomer.phone || selectedCustomer.email || i18n.t('intake.customerContactEmpty') }}</span>
+            </section>
+          }
+        } @else {
+          <div class="status-card neutral">
+            {{ i18n.t('intake.customerEmpty') }}
+          </div>
+
+          <div class="inline-form-grid">
+            <label class="field">
+              <span>{{ i18n.t('intake.customerName') }}</span>
+              <input
+                type="text"
+                name="newCustomerName"
+                [(ngModel)]="newCustomer.name"
+                required
+                placeholder=" "
+              />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.phone') }}</span>
+              <input type="tel" name="newCustomerPhone" [(ngModel)]="newCustomer.phone" placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.email') }}</span>
+              <input type="email" name="newCustomerEmail" [(ngModel)]="newCustomer.email" placeholder=" " />
+            </label>
+          </div>
+        }
+      </section>
+
+      <section class="stack-section">
+        <div class="section-heading">
+          <div>
+            <p class="preview-label">{{ i18n.t('common.vehicle') }}</p>
+            <strong>{{ i18n.t('intake.vehicleSelectCopy') }}</strong>
+          </div>
+
+          @if (customerMode === 'select' && form.clientId) {
+            <div class="mode-switch">
+              <button
+                type="button"
+                class="mode-chip"
+                [class.active]="vehicleMode === 'select'"
+                [disabled]="vehiclesLoading || !vehicles.length"
+                (click)="setVehicleMode('select')"
+              >
+                {{ i18n.t('common.select') }}
+              </button>
+              <button
+                type="button"
+                class="mode-chip"
+                [class.active]="vehicleMode === 'create'"
+                [disabled]="vehiclesLoading"
+                (click)="setVehicleMode('create')"
+              >
+                {{ i18n.t('common.new') }}
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (customerMode === 'select' && !form.clientId) {
+          <div class="status-card neutral">{{ i18n.t('intake.vehicleChooseCustomer') }}</div>
+        } @else if (customerMode === 'select' && vehiclesLoading) {
+          <div class="status-card neutral">{{ i18n.t('intake.vehicleLoading') }}</div>
+        } @else if (customerMode === 'select' && vehicleMode === 'select' && vehicles.length) {
+          <label class="field">
+            <span>{{ i18n.t('common.vehicle') }}</span>
+            <select name="vehicleId" [(ngModel)]="form.vehicleId" required>
+              <option value="" disabled>{{ i18n.t('common.select') }} {{ i18n.t('common.vehicle') }}</option>
+              @for (vehicle of vehicles; track vehicle.id) {
+                <option [value]="vehicle.id">{{ vehicle.plate }}{{ formatVehicleOption(vehicle) }}</option>
+              }
+            </select>
+          </label>
+
+          @if (selectedVehicle) {
+            <section class="inline-summary">
+              <span>{{ selectedVehicle.plate }}</span>
+              <span>{{ describeVehicle(selectedVehicle) }}</span>
+            </section>
+          }
+        } @else {
+          <div class="status-card neutral">
+            @if (customerMode === 'select') {
+              {{ i18n.t('intake.vehicleEmptyForCustomer') }}
+            } @else {
+              {{ i18n.t('intake.vehicleEmptyCreate') }}
+            }
+          </div>
+
+          <div class="inline-form-grid">
+            <label class="field">
+              <span>Plate</span>
+              <input type="text" name="newVehiclePlate" [(ngModel)]="newVehicle.plate" required placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.brand') }}</span>
+              <input type="text" name="newVehicleBrand" [(ngModel)]="newVehicle.brand" placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.model') }}</span>
+              <input type="text" name="newVehicleModel" [(ngModel)]="newVehicle.model" placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.year') }}</span>
+              <input
+                type="number"
+                name="newVehicleYear"
+                [(ngModel)]="newVehicle.year"
+                min="1900"
+                max="2100"
+                placeholder=" "
+              />
+            </label>
+          </div>
+        }
+      </section>
+
+      <label class="field">
+        <span>{{ i18n.t('common.service') }}</span>
+        @if (servicesLoading) {
+          <div class="status-card neutral">{{ i18n.t('intake.serviceLoading') }}</div>
+        } @else if (!services.length) {
+          <div class="status-card neutral">
+            {{ i18n.t('intake.serviceEmpty') }}
+          </div>
+        } @else {
+          <select name="serviceId" [(ngModel)]="form.serviceId" required>
+            <option value="" disabled>{{ i18n.t('common.select') }} {{ i18n.t('common.service') }}</option>
+            @for (service of services; track service.id) {
+              <option [value]="service.id">{{ service.name }}</option>
+            }
+          </select>
+        }
+      </label>
+
+      @if (selectedService) {
+        <section class="service-preview">
+          <div>
+            <p class="preview-label">{{ i18n.t('intake.selectedService') }}</p>
+            <strong>{{ selectedService.name }}</strong>
+          </div>
+          <div class="preview-grid">
+            <div>
+              <p class="preview-label">{{ i18n.t('intake.estimatedHours') }}</p>
+              <span>{{ formatHours(selectedService.estimatedDurationHours) }}</span>
+            </div>
+            <div>
+              <p class="preview-label">{{ i18n.t('intake.flow') }}</p>
+              <span>{{ selectedService.requiresDiagnostic ? i18n.t('intake.flowDiagnostic') : i18n.t('intake.flowDirect') }}</span>
+            </div>
+          </div>
+        </section>
+      }
+
+      <label class="field">
+        <span>{{ i18n.t('intake.scheduledStart') }}</span>
+        <input type="datetime-local" name="scheduledStartAt" [(ngModel)]="form.scheduledStartAt" required placeholder=" " />
+      </label>
+
+      @if (error) {
+        <section class="status-card error">{{ error }}</section>
+      }
+
+      @if (successMessage) {
+        <section class="status-card success">{{ successMessage }}</section>
+      }
+
+      <button
+        type="submit"
+        [disabled]="loading || customersLoading || vehiclesLoading || servicesLoading || !canSubmit"
+      >
+        {{ loading ? i18n.t('intake.creating') : i18n.t('intake.submit') }}
+      </button>
+    </form>
+  </section>
+</section>

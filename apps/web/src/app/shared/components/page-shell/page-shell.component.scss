@@ -1,0 +1,36 @@
+
+    :host {
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: var(--at-z-sticky, 200);
+    }
+    .page-shell-header {
+      display: flex;
+      align-items: center;
+      gap: var(--at-sp-4);
+      padding: var(--at-sp-4) var(--at-sp-5);
+      border-bottom: 1px solid var(--at-outline-variant);
+      background: var(--at-surface-2);
+    }
+    .page-shell-header__icon {
+      color: var(--at-primary);
+      flex-shrink: 0;
+    }
+    .page-shell-header__text {
+      flex: 1;
+      min-width: 0;
+    }
+    h2 {
+      margin: 0 0 var(--at-sp-1);
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--at-on-surface);
+      letter-spacing: 0;
+    }
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--at-on-surface-var);
+      line-height: 1.5;
+    }

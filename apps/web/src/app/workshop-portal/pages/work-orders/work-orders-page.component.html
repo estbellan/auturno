@@ -1,0 +1,119 @@
+<div class="work-orders-page">
+  <at-page-shell
+    icon="assignment"
+    [title]="i18n.t('workOrders.title')"
+    [description]="i18n.t('workOrders.description')"
+  />
+
+  <div class="page-body">
+  <at-context-hint
+    hintKey="work-orders-board"
+    icon="tips_and_updates"
+    [title]="i18n.t('hint.workOrders.title')"
+    [text]="i18n.t('hint.workOrders.text')"
+  />
+
+  <section class="card filters-card">
+    <div class="filters-header">
+      <div>
+        <h2>{{ i18n.t('workOrders.board') }}</h2>
+        <p>{{ i18n.t('workOrders.visibleCount', { visible: visibleCount, total: totalCount }) }}</p>
+      </div>
+      <button type="button" [disabled]="loading" (click)="loadWorkOrders()">
+        {{ loading ? i18n.t('workOrders.refreshing') : i18n.t('common.refresh') }}
+      </button>
+    </div>
+
+    <div class="filters-grid">
+      <label class="field">
+        <span>{{ i18n.t('workOrders.search') }}</span>
+        <input
+          type="text"
+          name="search"
+          [(ngModel)]="searchTerm"
+          [placeholder]="i18n.t('workOrders.searchPlaceholder')"
+        />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.status') }}</span>
+        <select name="status" [(ngModel)]="selectedStatus">
+          @for (option of statusOptions; track option.value) {
+            <option [ngValue]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.type') }}</span>
+        <select name="type" [(ngModel)]="selectedType">
+          @for (option of typeOptions; track option.value) {
+            <option [ngValue]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (hasActiveFilters) {
+      <button type="button" class="secondary clear-button" (click)="clearFilters()">
+        {{ i18n.t('workOrders.clearFilters') }}
+      </button>
+    }
+  </section>
+
+  @if (loading) {
+    <section class="card status-card">{{ i18n.t('workOrders.loading') }}</section>
+  } @else if (error) {
+    <section class="card status-card error">{{ error }}</section>
+  } @else if (!workOrderItems.length) {
+    <section class="card status-card">
+      {{ i18n.t('workOrders.empty') }}
+    </section>
+  } @else if (!filteredWorkOrderItems.length) {
+    <section class="card status-card">
+      {{ i18n.t('workOrders.emptyFiltered') }}
+    </section>
+  } @else {
+    <section class="work-order-list">
+      @for (item of filteredWorkOrderItems; track item.workOrder.id) {
+        <a class="work-order-card" [routerLink]="['/workshop/work-orders', item.workOrder.id]">
+          <div class="card-topline">
+            <span class="type-chip" [class.diagnostic]="item.workOrder.type === 'diagnostic'">
+              {{ item.workOrder.type }}
+            </span>
+            <span class="status-chip" [class]="statusClassName(item.workOrder.status)">
+              {{ formatStatus(item.workOrder.status) }}
+            </span>
+          </div>
+
+          <div class="identity-block">
+            <div>
+              <p class="eyebrow">{{ i18n.t('common.customer') }}</p>
+              <strong>{{ item.customerName }}</strong>
+            </div>
+            <div>
+              <p class="eyebrow">{{ i18n.t('common.vehicle') }}</p>
+              <strong>{{ item.vehicleLabel }}</strong>
+            </div>
+          </div>
+
+          <dl class="card-grid">
+            <div>
+              <dt>{{ i18n.t('common.service') }}</dt>
+              <dd>{{ item.serviceName }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('workOrders.diagnosticEta') }}</dt>
+              <dd>{{ formatDate(item.workOrder.promisedDiagnosticAt) }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('workOrders.deliveryEta') }}</dt>
+              <dd>{{ formatDate(item.workOrder.promisedDeliveryAt) }}</dd>
+            </div>
+          </dl>
+        </a>
+      }
+    </section>
+  }
+  </div>
+</div>

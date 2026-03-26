@@ -1,0 +1,46 @@
+
+    <div class="setup-shell">
+      <div class="setup-card card-elevated">
+
+        <div class="setup-card__brand">
+          <span class="ms ms--lg" style="color: var(--at-primary)">garage</span>
+          <span class="type-title-lg" style="color: var(--at-primary); font-weight: 800; letter-spacing: 0.08em">AUTURNO</span>
+        </div>
+
+        <div class="setup-card__copy">
+          <h2 class="type-headline-sm" style="margin: 0">{{ i18n.t('setup.title') }}</h2>
+          <p class="type-body-md" style="margin: 0">{{ i18n.t('setup.copy') }}</p>
+        </div>
+
+        @if (error) {
+          <div class="banner banner--error">
+            <span class="ms banner__icon">error</span>
+            <div class="banner__body">{{ error }}</div>
+          </div>
+        }
+
+        <form (ngSubmit)="submit()" #setupForm="ngForm" class="setup-card__form">
+          <div class="field">
+            <label for="workshopName">{{ i18n.t('setup.nameLabel') }}</label>
+            <input
+              id="workshopName"
+              name="workshopName"
+              type="text"
+              [(ngModel)]="name"
+              [placeholder]="i18n.t('setup.namePlaceholder')"
+              required
+              autocomplete="organization"
+            />
+          </div>
+          <button type="submit" class="btn-filled setup-card__submit" [disabled]="working || !name.trim()">
+            @if (working) {
+              <span class="spinner" style="width:18px;height:18px;border-width:2px"></span>
+            } @else {
+              <span class="ms ms--sm">add_business</span>
+            }
+            {{ working ? i18n.t('setup.creating') : i18n.t('setup.submit') }}
+          </button>
+        </form>
+
+      </div>
+    </div>

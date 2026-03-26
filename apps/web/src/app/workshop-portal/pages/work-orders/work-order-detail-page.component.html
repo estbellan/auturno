@@ -1,0 +1,275 @@
+<div class="detail-page">
+  <at-page-shell
+    icon="assignment"
+    [title]="i18n.t('workOrders.detail.title')"
+    [description]="i18n.t('workOrders.detail.description')"
+  />
+
+  <div class="page-body">
+  <a class="back-link btn-text" routerLink="/workshop/work-orders">
+    <span class="ms" style="font-size:18px">arrow_back</span>
+    {{ i18n.t('workOrders.detail.back') }}
+  </a>
+
+  @if (loading) {
+    <section class="card status-card">{{ i18n.t('workOrders.detail.loading') }}</section>
+  } @else if (error) {
+    <section class="card status-card error">{{ error }}</section>
+  } @else if (workOrder) {
+    <at-work-order-summary-section
+      [workOrder]="workOrder"
+      [customerName]="customerName"
+      [vehicleLabel]="vehicleLabel"
+      [serviceName]="serviceName"
+      [actions]="availableActions"
+      [actionLoading]="actionLoading"
+      (actionSelected)="runAction($event)"
+    />
+
+    <section class="card promise-card">
+      <div class="section-header">
+        <div>
+          <h3>{{ i18n.t('workOrders.detail.promiseTitle') }}</h3>
+          <p>{{ i18n.t('workOrders.detail.promiseCopy') }}</p>
+        </div>
+      </div>
+
+      <dl class="promise-grid current-promises">
+        <div>
+          <dt>{{ i18n.t('workOrders.detail.currentDiagnosticPromise') }}</dt>
+          <dd>{{ formatDate(workOrder.promisedDiagnosticAt) }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('workOrders.detail.currentDeliveryPromise') }}</dt>
+          <dd>{{ formatDate(workOrder.promisedDeliveryAt) }}</dd>
+        </div>
+      </dl>
+
+      <form class="promise-form" (ngSubmit)="savePromises()">
+        <label class="field">
+          <span>{{ i18n.t('workOrders.detail.promisedDiagnosticAt') }}</span>
+          <input
+            type="datetime-local"
+            name="promisedDiagnosticAt"
+            [(ngModel)]="promiseForm.promisedDiagnosticAt"
+            placeholder=" "
+          />
+        </label>
+
+        <label class="field">
+          <span>{{ i18n.t('workOrders.detail.promisedDeliveryAt') }}</span>
+          <input
+            type="datetime-local"
+            name="promisedDeliveryAt"
+            [(ngModel)]="promiseForm.promisedDeliveryAt"
+            placeholder=" "
+          />
+        </label>
+
+        <label class="field field-full">
+          <span>{{ i18n.t('common.reason') }}</span>
+          <textarea
+            name="promiseReason"
+            [(ngModel)]="promiseForm.reason"
+            rows="3"
+            [placeholder]="i18n.t('workOrders.detail.promiseReasonPlaceholder')"
+          ></textarea>
+        </label>
+
+        @if (promiseError) {
+          <section class="status-card error">{{ promiseError }}</section>
+        }
+
+        @if (promiseSuccessMessage) {
+          <section class="status-card success">{{ promiseSuccessMessage }}</section>
+        }
+
+        <div class="promise-actions">
+          <button type="submit" [disabled]="promiseSubmitting || !canSavePromises">
+            {{ promiseSubmitting ? i18n.t('common.working') : i18n.t('workOrders.detail.savePromises') }}
+          </button>
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="promiseSubmitting"
+            (click)="resetPromiseForm()"
+          >
+            {{ i18n.t('common.reset') }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card communication-card">
+      <div class="section-header">
+        <div>
+          <h3>{{ i18n.t('workOrders.detail.communicationTitle') }}</h3>
+          <p>{{ i18n.t('workOrders.detail.communicationCopy') }}</p>
+        </div>
+      </div>
+
+      @if (notificationError) {
+        <section class="status-card error">{{ notificationError }}</section>
+      }
+
+      @if (!notifications.length) {
+        <p class="empty-copy">{{ i18n.t('workOrders.detail.communicationEmpty') }}</p>
+      } @else {
+        <div class="notification-list">
+          @for (notification of notifications; track notification.id) {
+            <article class="notification-item">
+              <div class="notification-copy">
+                <div class="notification-header">
+                  <p class="timeline-title">
+                    {{ notificationLabel(notification.eventType) }}
+                  </p>
+                  <span
+                    class="notification-status"
+                    [class.notification-status-acknowledged]="notification.status === 'acknowledged'"
+                  >
+                    {{ notification.status === 'acknowledged' ? i18n.t('common.acknowledged') : i18n.t('common.pending') }}
+                  </span>
+                </div>
+
+                <p class="timeline-meta">{{ formatDate(notification.createdAt) }}</p>
+                <p class="notification-preview">{{ notification.messagePreview }}</p>
+
+                @if (notification.status === 'acknowledged') {
+                  <p class="timeline-meta">
+                    {{ i18n.t('workOrders.detail.acknowledgedOn') }}
+                    @if (notification.acknowledgedAt) {
+                      {{ formatDate(notification.acknowledgedAt) }}
+                    }
+                    @if (notification.acknowledgedByUserId) {
+                      {{ i18n.t('workOrders.detail.byActor', { value: notification.acknowledgedByUserId }) }}
+                    }
+                  </p>
+                }
+              </div>
+
+              @if (notification.status === 'pending') {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="acknowledgingNotificationId === notification.id"
+                  (click)="acknowledgeNotification(notification.id)"
+                >
+                  {{
+                    acknowledgingNotificationId === notification.id
+                      ? i18n.t('workOrders.detail.acknowledging')
+                      : i18n.t('workOrders.detail.acknowledge')
+                  }}
+                </button>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="card history-card">
+      <div class="section-header">
+        <div>
+          <h3>{{ i18n.t('workOrders.detail.historyTitle') }}</h3>
+          <p>{{ i18n.t('workOrders.detail.historyCopy') }}</p>
+        </div>
+      </div>
+
+      @if (!history.length) {
+        <p class="empty-copy">{{ i18n.t('workOrders.detail.historyEmpty') }}</p>
+      } @else {
+        <div class="timeline">
+          @for (event of history; track event.id) {
+            <article class="timeline-item">
+              <div class="timeline-marker"></div>
+
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div>
+                    <p class="timeline-title">{{ historyLabel(event.action) }}</p>
+                    <p class="timeline-meta">
+                      {{ formatDate(event.createdAt) }} | {{ event.actorUserId || i18n.t('common.notAvailable') }}
+                    </p>
+                  </div>
+                  <span class="timeline-chip">{{ event.entityType }}</span>
+                </div>
+
+                @if (historyReason(event)) {
+                  <p class="timeline-reason">{{ i18n.t('workOrders.detail.historyReason', { value: historyReason(event) }) }}</p>
+                }
+
+                @if (event.action === 'work_order_status_changed') {
+                  <div class="timeline-change-grid">
+                    <div>
+                      <p class="change-label">{{ i18n.t('workOrders.detail.before') }}</p>
+                      <strong>{{ formatValue(readMetadata(event, 'fromStatus')) }}</strong>
+                    </div>
+                    <div>
+                      <p class="change-label">{{ i18n.t('workOrders.detail.after') }}</p>
+                      <strong>{{ formatValue(readMetadata(event, 'toStatus')) }}</strong>
+                    </div>
+                  </div>
+                }
+
+                @if (event.action === 'work_order_promises_changed') {
+                  <div class="timeline-promises">
+                    @if (hasChange(event, 'fromPromisedDiagnosticAt', 'toPromisedDiagnosticAt')) {
+                      <div class="timeline-change-block">
+                        <p class="change-label">{{ i18n.t('workOrders.detail.promiseDiagnostic') }}</p>
+                        <p>
+                          {{ formatDate(readMetadata(event, 'fromPromisedDiagnosticAt')) }}
+                          ->
+                          {{ formatDate(readMetadata(event, 'toPromisedDiagnosticAt')) }}
+                        </p>
+                      </div>
+                    }
+
+                    @if (hasChange(event, 'fromPromisedDeliveryAt', 'toPromisedDeliveryAt')) {
+                      <div class="timeline-change-block">
+                        <p class="change-label">{{ i18n.t('workOrders.detail.promiseDelivery') }}</p>
+                        <p>
+                          {{ formatDate(readMetadata(event, 'fromPromisedDeliveryAt')) }}
+                          ->
+                          {{ formatDate(readMetadata(event, 'toPromisedDeliveryAt')) }}
+                        </p>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    @if (workOrder.type === 'diagnostic') {
+      <at-diagnostic-section
+        [diagnostic]="diagnostic"
+        [actions]="diagnosticActions"
+        [actionLoading]="actionLoading"
+        [form]="diagnosticForm"
+        [canCreateDiagnostic]="canCreateDiagnostic"
+        (actionSelected)="runAction($event)"
+        (createDraft)="createDiagnosticDraft()"
+        (addRecommendedService)="addRecommendedService()"
+        (removeRecommendedService)="removeRecommendedService($event)"
+      />
+
+      <at-quote-section
+        [quote]="quote"
+        [actions]="quoteActions"
+        [actionLoading]="actionLoading"
+        [showForm]="showQuoteForm"
+        [canCreateQuote]="canCreateQuote"
+        [draftTotal]="quoteDraftTotal"
+        [form]="quoteForm"
+        (actionSelected)="runAction($event)"
+        (createDraft)="createQuoteDraft()"
+        (addItem)="addQuoteItem()"
+        (removeItem)="removeQuoteItem($event)"
+      />
+    }
+  }
+  </div>
+</div>

@@ -1,0 +1,191 @@
+<div class="customers-page">
+  <at-page-shell
+    icon="group"
+    [title]="i18n.t('customers.title')"
+    [description]="i18n.t('customers.description')"
+  />
+
+  <div class="page-body">
+  <section class="card form-card">
+    <div class="section-copy">
+      <h2>{{ i18n.t('customers.create') }}</h2>
+      <p>{{ i18n.t('customers.createCopy') }}</p>
+    </div>
+
+    <form class="customer-form" (ngSubmit)="submit()">
+      <label class="field">
+        <span>{{ i18n.t('common.name') }}</span>
+        <input type="text" name="name" [(ngModel)]="form.name" required placeholder=" " />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.phone') }}</span>
+        <input type="tel" name="phone" [(ngModel)]="form.phone" placeholder=" " />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.email') }}</span>
+        <input type="email" name="email" [(ngModel)]="form.email" placeholder=" " />
+      </label>
+
+      @if (formError) {
+        <section class="status-card error">{{ formError }}</section>
+      }
+
+      @if (successMessage) {
+        <section class="status-card success">{{ successMessage }}</section>
+      }
+
+      <button type="submit" [disabled]="submitting || !canSubmit">
+        {{ submitting ? i18n.t('customers.creating') : i18n.t('customers.createButton') }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card list-card">
+    <div class="section-copy">
+      <h2>{{ i18n.t('customers.list') }}</h2>
+      <p>{{ i18n.t('customers.listCopy') }}</p>
+    </div>
+
+    <label class="field">
+      <span>{{ i18n.t('workOrders.search') }}</span>
+      <input type="search" name="search" [(ngModel)]="searchTerm" [placeholder]="i18n.t('customers.searchPlaceholder')" />
+    </label>
+
+    @if (loading) {
+      <section class="status-card neutral">{{ i18n.t('customers.loading') }}</section>
+    } @else if (listError) {
+      <section class="status-card error">{{ listError }}</section>
+    } @else if (!customers.length) {
+      <section class="status-card neutral">{{ i18n.t('customers.empty') }}</section>
+    } @else if (!filteredCustomers.length) {
+      <section class="status-card neutral">{{ i18n.t('customers.emptySearch') }}</section>
+    } @else {
+      <div class="customer-list">
+        @for (customer of filteredCustomers; track customer.id) {
+          <article class="customer-card">
+            <div class="customer-card-header">
+              <div>
+                <p class="eyebrow">{{ i18n.t('customers.eyebrow') }}</p>
+                <h3>{{ customer.name }}</h3>
+                <p class="invite-status">{{ formatInviteStatus(customer.inviteStatus) }}</p>
+              </div>
+
+              <div class="card-actions">
+                @if (editingCustomerId !== customer.id) {
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    (click)="startEditing(customer)"
+                  >
+                    {{ i18n.t('common.edit') }}
+                  </button>
+                }
+
+                @if (editingCustomerId !== customer.id) {
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    [disabled]="inviteSubmittingId === customer.id || !customer.email || customer.inviteStatus === 'claimed'"
+                    (click)="inviteCustomer(customer)"
+                  >
+                    {{
+                      inviteSubmittingId === customer.id
+                        ? i18n.t('customers.inviting')
+                        : customer.inviteStatus === 'invited'
+                          ? i18n.t('customers.reInvite')
+                          : customer.inviteStatus === 'claimed'
+                            ? i18n.t('customers.claimedLabel')
+                            : i18n.t('customers.invite')
+                    }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (editingCustomerId === customer.id && editForm) {
+              <form class="customer-edit-form" (ngSubmit)="saveEdit(customer.id)">
+                <label class="field">
+                  <span>{{ i18n.t('common.name') }}</span>
+                  <input
+                    type="text"
+                    name="edit-name-{{ customer.id }}"
+                    [(ngModel)]="editForm.name"
+                    required
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="field">
+                  <span>{{ i18n.t('common.phone') }}</span>
+                  <input
+                    type="tel"
+                    name="edit-phone-{{ customer.id }}"
+                    [(ngModel)]="editForm.phone"
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="field">
+                  <span>{{ i18n.t('common.email') }}</span>
+                  <input
+                    type="email"
+                    name="edit-email-{{ customer.id }}"
+                    [(ngModel)]="editForm.email"
+                    placeholder=" "
+                  />
+                </label>
+
+                @if (editError) {
+                  <section class="status-card error">{{ editError }}</section>
+                }
+
+                <div class="actions">
+                  <button
+                    type="submit"
+                    [disabled]="editingSubmitting || !canSubmitEdit"
+                  >
+                    {{ editingSubmitting ? i18n.t('customers.saving') : i18n.t('customers.save') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    [disabled]="editingSubmitting"
+                    (click)="cancelEditing()"
+                  >
+                    {{ i18n.t('common.cancel') }}
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <div class="customer-details">
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.phone') }}</p>
+                  <span>{{ customer.phone || i18n.t('common.notProvided') }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.email') }}</p>
+                  <span>{{ customer.email || i18n.t('common.notProvided') }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('customers.portalAccess') }}</p>
+                  <span>
+                    @if (customer.inviteStatus === 'invited' && customer.invitedAt) {
+                      {{ i18n.t('customers.invitedAt', { value: (customer.invitedAt | date: 'shortDate') ?? '' }) }}
+                    } @else if (customer.inviteStatus === 'claimed' && customer.claimedAt) {
+                      {{ i18n.t('customers.claimedAt', { value: (customer.claimedAt | date: 'shortDate') ?? '' }) }}
+                    } @else {
+                      {{ i18n.t('customers.notInvited') }}
+                    }
+                  </span>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+  </div><!-- /.page-body -->
+</div><!-- /.customers-page -->

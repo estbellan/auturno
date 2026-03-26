@@ -1,0 +1,45 @@
+
+    @if (visible()) {
+      <div class="splash-overlay" (click)="onOverlayClick($event)">
+        <div
+          class="splash-card"
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="i18n.t('splash.ariaLabel')"
+        >
+          <!-- Step dots -->
+          <div class="splash-card__dots">
+            @for (s of slides; track $index) {
+              <span class="splash-card__dot" [class.active]="$index === step()"></span>
+            }
+          </div>
+
+          <!-- Icon -->
+          <div class="splash-card__icon">
+            <span class="ms">{{ currentSlide().icon }}</span>
+          </div>
+
+          <!-- Content -->
+          <h2 class="splash-card__title">{{ i18n.t(currentSlide().titleKey) }}</h2>
+          <p class="splash-card__body">{{ i18n.t(currentSlide().bodyKey) }}</p>
+
+          <!-- Actions -->
+          <div class="splash-card__actions">
+            @if (step() < slides.length - 1) {
+              <button class="splash-btn splash-btn--primary" (click)="next()">
+                {{ i18n.t('splash.next') }}
+                <span class="ms ms--sm">arrow_forward</span>
+              </button>
+              <button class="splash-btn splash-btn--ghost" (click)="close()">
+                {{ i18n.t('splash.skip') }}
+              </button>
+            } @else {
+              <button class="splash-btn splash-btn--primary" (click)="close()">
+                <span class="ms ms--sm">check_circle</span>
+                {{ i18n.t('splash.start') }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }

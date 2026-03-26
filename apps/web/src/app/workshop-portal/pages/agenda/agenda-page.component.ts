@@ -1,338 +1,62 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import {
   ApiService,
   AppointmentViewModel,
   CustomerViewModel,
+  ServiceRequestViewModel,
   ServiceViewModel,
   VehicleViewModel,
   WorkOrderViewModel,
 } from '../../../core/api.service';
 import { AuthService } from '../../../core/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { ContextHintComponent } from '../../../shared/components/context-hint/context-hint.component';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 
 interface AgendaItemViewModel {
   appointment: AppointmentViewModel;
   customerName: string;
+  customerNote: string;
+  vehicleLabel: string;
+  vehicleNote: string;
+  serviceLabel: string;
+  serviceNote: string;
+  workOrder: WorkOrderViewModel | null;
+}
+
+interface ServiceRequestListItemViewModel {
+  request: ServiceRequestViewModel;
+  customerName: string;
   vehicleLabel: string;
   serviceLabel: string;
-  workOrder: WorkOrderViewModel | null;
 }
 
 @Component({
   selector: 'at-agenda-page',
   standalone: true,
-  imports: [DatePipe, RouterLink, PageShellComponent],
-  template: `
-    <section class="agenda-page">
-      <at-page-shell
-        title="Agenda"
-        description="Upcoming intake work with quick access to open or continue work orders."
-      />
-
-      <section class="card action-card">
-        <div class="action-copy">
-          <h2>New intake</h2>
-          <p>Create an appointment and immediately open its work order.</p>
-        </div>
-        <a class="action-link" routerLink="/workshop/agenda/intake">Start intake</a>
-      </section>
-
-      <section class="card list-card">
-        <div class="section-header">
-          <div>
-            <h2>Upcoming work</h2>
-            <p>Appointments are ordered by scheduled start so the workshop can act on the next jobs first.</p>
-          </div>
-        </div>
-
-        @if (loading) {
-          <section class="status-card neutral">Loading upcoming appointments...</section>
-        } @else if (error) {
-          <section class="status-card error">{{ error }}</section>
-        } @else if (!agendaItems.length) {
-          <section class="status-card neutral">No appointments scheduled yet for this workshop.</section>
-        } @else {
-          <div class="agenda-list">
-            @for (item of agendaItems; track item.appointment.id) {
-              <article class="agenda-item">
-                <div class="agenda-main">
-                  <div class="headline-row">
-                    <div>
-                      <p class="eyebrow">Scheduled</p>
-                      <h3>{{ item.customerName }}</h3>
-                    </div>
-
-                    @if (item.workOrder) {
-                      <span class="status-badge work-order">{{ formatWorkOrderStatus(item.workOrder.status) }}</span>
-                    } @else {
-                      <span class="status-badge appointment">Appointment only</span>
-                    }
-                  </div>
-
-                  <div class="detail-grid">
-                    <div>
-                      <p class="detail-label">Vehicle</p>
-                      <span>{{ item.vehicleLabel }}</span>
-                    </div>
-                    <div>
-                      <p class="detail-label">Service</p>
-                      <span>{{ item.serviceLabel }}</span>
-                    </div>
-                    <div>
-                      <p class="detail-label">Start</p>
-                      <span>{{ item.appointment.scheduledStartAt | date: 'EEE d MMM, HH:mm' }}</span>
-                    </div>
-                    <div>
-                      <p class="detail-label">Planned hours</p>
-                      <span>{{ formatHours(item.appointment.estimatedDurationHours) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="reference-grid">
-                    <p>Client: {{ item.appointment.clientId }}</p>
-                    <p>Vehicle ID: {{ item.appointment.vehicleId }}</p>
-                    <p>Service ID: {{ item.appointment.serviceId }}</p>
-                  </div>
-                </div>
-
-                <div class="agenda-actions">
-                  @if (item.workOrder) {
-                    <a
-                      class="secondary-link"
-                      [routerLink]="['/workshop/work-orders', item.workOrder.id]"
-                    >
-                      Open work order
-                    </a>
-                  } @else {
-                    <button
-                      type="button"
-                      class="primary-button"
-                      [disabled]="openingAppointmentId === item.appointment.id"
-                      (click)="openWorkOrder(item.appointment.id)"
-                    >
-                      {{
-                        openingAppointmentId === item.appointment.id
-                          ? 'Opening work order...'
-                          : 'Create and open work order'
-                      }}
-                    </button>
-                  }
-                </div>
-              </article>
-            }
-          </div>
-        }
-      </section>
-    </section>
-  `,
-  styles: [
-    `
-      .agenda-page {
-        display: grid;
-        gap: 1rem;
-      }
-
-      .card {
-        border-radius: 16px;
-        background: #ffffff;
-        border: 1px solid #dbe4f0;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      }
-
-      .action-card,
-      .list-card {
-        padding: 1rem;
-      }
-
-      .action-card {
-        display: grid;
-        gap: 0.9rem;
-      }
-
-      .action-copy,
-      .section-header {
-        display: grid;
-        gap: 0.35rem;
-      }
-
-      .section-header {
-        margin-bottom: 0.9rem;
-      }
-
-      h2,
-      h3,
-      p {
-        margin: 0;
-      }
-
-      h2,
-      h3 {
-        color: #0f172a;
-      }
-
-      .section-header p,
-      .action-copy p {
-        color: #64748b;
-      }
-
-      .action-link,
-      .primary-button,
-      .secondary-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.75rem 1rem;
-        border-radius: 12px;
-        font: inherit;
-        font-weight: 600;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-      }
-
-      .action-link,
-      .primary-button {
-        background: #1d4ed8;
-        color: #ffffff;
-      }
-
-      .secondary-link {
-        background: #eff6ff;
-        color: #1d4ed8;
-      }
-
-      .agenda-list {
-        display: grid;
-        gap: 0.9rem;
-      }
-
-      .agenda-item {
-        display: grid;
-        gap: 0.9rem;
-        padding: 1rem;
-        border-radius: 14px;
-        border: 1px solid #dbe4f0;
-        background: #f8fafc;
-      }
-
-      .agenda-main {
-        display: grid;
-        gap: 0.9rem;
-      }
-
-      .headline-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.75rem;
-        align-items: flex-start;
-      }
-
-      .eyebrow,
-      .detail-label {
-        color: #64748b;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .detail-grid {
-        display: grid;
-        gap: 0.75rem;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .detail-grid span,
-      .reference-grid p {
-        color: #334155;
-      }
-
-      .reference-grid {
-        display: grid;
-        gap: 0.2rem;
-        padding-top: 0.2rem;
-        border-top: 1px solid #e2e8f0;
-        font-size: 0.85rem;
-      }
-
-      .agenda-actions {
-        display: grid;
-      }
-
-      .status-card {
-        padding: 0.9rem 1rem;
-        border-radius: 12px;
-        font-weight: 600;
-      }
-
-      .neutral {
-        color: #334155;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-      }
-
-      .error {
-        color: #991b1b;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-      }
-
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.45rem 0.7rem;
-        border-radius: 999px;
-        font-size: 0.8rem;
-        font-weight: 700;
-      }
-
-      .status-badge.work-order {
-        background: #dbeafe;
-        color: #1d4ed8;
-      }
-
-      .status-badge.appointment {
-        background: #e2e8f0;
-        color: #334155;
-      }
-
-      button[disabled] {
-        opacity: 0.7;
-      }
-
-      @media (min-width: 768px) {
-        .action-card {
-          grid-template-columns: 1fr auto;
-          align-items: center;
-        }
-
-        .agenda-item {
-          grid-template-columns: 1fr auto;
-          align-items: center;
-        }
-
-        .agenda-actions {
-          align-self: stretch;
-          align-content: center;
-        }
-      }
-    `,
-  ],
+  imports: [DatePipe, RouterLink, PageShellComponent, ContextHintComponent],
+  templateUrl: './agenda-page.component.html',
+  styleUrl: './agenda-page.component.scss',
 })
 export class AgendaPageComponent implements OnInit {
+  readonly i18n = inject(I18nService);
   agendaItems: AgendaItemViewModel[] = [];
+  serviceRequestItems: ServiceRequestListItemViewModel[] = [];
   loading = true;
   openingAppointmentId: string | null = null;
+  updatingServiceRequestId: string | null = null;
+  convertingServiceRequestId: string | null = null;
   error = '';
+  serviceRequestError = '';
 
   constructor(
     private readonly apiService: ApiService,
     private readonly authService: AuthService,
     private readonly router: Router,
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     await this.loadAgenda();
@@ -341,11 +65,12 @@ export class AgendaPageComponent implements OnInit {
   async loadAgenda(): Promise<void> {
     this.loading = true;
     this.error = '';
+    this.serviceRequestError = '';
 
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to load agenda without an authenticated session.';
+        this.error = this.i18n.t('agenda.authError');
         return;
       }
 
@@ -365,9 +90,23 @@ export class AgendaPageComponent implements OnInit {
         services,
         workOrders,
       );
+
+      try {
+        this.serviceRequestItems = this.buildServiceRequestItems(
+          await this.apiService.listWorkshopServiceRequests(token),
+          customers,
+          vehicles,
+          services,
+        );
+      } catch (error) {
+        console.error('Failed to load workshop service requests', error);
+        this.serviceRequestItems = [];
+        this.serviceRequestError = this.i18n.t('agenda.requests.updateError');
+      }
     } catch (error) {
       console.error('Failed to load agenda', error);
-      this.error = 'Failed to load upcoming work for this workshop.';
+      this.error = this.i18n.t('agenda.error');
+      this.serviceRequestItems = [];
     } finally {
       this.loading = false;
     }
@@ -380,7 +119,7 @@ export class AgendaPageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to open a work order without an authenticated session.';
+        this.error = this.i18n.t('agenda.openAuthError');
         return;
       }
 
@@ -392,9 +131,60 @@ export class AgendaPageComponent implements OnInit {
       await this.router.navigate(['/workshop/work-orders', workOrder.id]);
     } catch (error) {
       console.error('Failed to open work order from agenda', error);
-      this.error = 'Failed to create or open the work order for this appointment.';
+      this.error = this.i18n.t('agenda.openError');
     } finally {
       this.openingAppointmentId = null;
+    }
+  }
+
+  async updateServiceRequestStatus(
+    serviceRequestId: string,
+    status: 'reviewed' | 'accepted' | 'rejected',
+  ): Promise<void> {
+    this.updatingServiceRequestId = serviceRequestId;
+    this.serviceRequestError = '';
+
+    try {
+      const token = await this.authService.getAccessToken();
+      if (!token) {
+        this.serviceRequestError = this.i18n.t('agenda.requests.updateAuthError');
+        return;
+      }
+
+      await this.apiService.updateWorkshopServiceRequestStatus(
+        token,
+        serviceRequestId,
+        status,
+      );
+      await this.loadAgenda();
+    } catch (error) {
+      console.error('Failed to update service request', error);
+      this.serviceRequestError = this.i18n.t('agenda.requests.updateError');
+    } finally {
+      this.updatingServiceRequestId = null;
+    }
+  }
+
+  async convertServiceRequest(request: ServiceRequestViewModel): Promise<void> {
+    this.convertingServiceRequestId = request.id;
+    this.serviceRequestError = '';
+
+    try {
+      const token = await this.authService.getAccessToken();
+      if (!token) {
+        this.serviceRequestError = this.i18n.t('agenda.requests.convertAuthError');
+        return;
+      }
+
+      await this.apiService.convertWorkshopServiceRequest(token, request.id, {
+        scheduledStartAt: request.preferredDateTime ?? undefined,
+      });
+      await this.loadAgenda();
+    } catch (error) {
+      console.error('Failed to convert service request', error);
+      this.serviceRequestError = this.i18n.t('agenda.requests.convertError');
+    } finally {
+      this.convertingServiceRequestId = null;
     }
   }
 
@@ -403,7 +193,7 @@ export class AgendaPageComponent implements OnInit {
   }
 
   formatWorkOrderStatus(status: WorkOrderViewModel['status']): string {
-    return status.replace(/_/g, ' ');
+    return this.i18n.t(`workOrders.status.${status}`);
   }
 
   private buildAgendaItems(
@@ -427,20 +217,54 @@ export class AgendaPageComponent implements OnInit {
 
       return {
         appointment,
-        customerName: customer?.name ?? appointment.clientId,
-        vehicleLabel: this.describeVehicle(vehicle, appointment.vehicleId),
-        serviceLabel: service?.name ?? appointment.serviceId,
+        customerName: customer?.name?.trim() || this.i18n.t('agenda.customerMissing'),
+        customerNote: customer
+          ? customer.email || customer.phone || this.i18n.t('agenda.customerExisting')
+          : this.i18n.t('agenda.customerMissingNote'),
+        vehicleLabel: this.describeVehicle(vehicle),
+        vehicleNote: vehicle
+          ? vehicle.plate
+            ? this.i18n.t('agenda.platePrefix', { value: vehicle.plate })
+            : this.i18n.t('agenda.vehicleExisting')
+          : this.i18n.t('agenda.vehicleMissingNote'),
+        serviceLabel: service?.name?.trim() || this.i18n.t('agenda.serviceMissing'),
+        serviceNote: service
+          ? this.i18n.t('agenda.serviceEstimated', {
+            value: this.formatHours(service.estimatedDurationHours),
+          })
+          : this.i18n.t('agenda.serviceMissingNote'),
         workOrder: workOrderMap.get(appointment.id) ?? null,
       };
     });
   }
 
-  private describeVehicle(
-    vehicle: VehicleViewModel | undefined,
-    fallbackVehicleId: string,
-  ): string {
+  private buildServiceRequestItems(
+    requests: ServiceRequestViewModel[],
+    customers: CustomerViewModel[],
+    vehicles: VehicleViewModel[],
+    services: ServiceViewModel[],
+  ): ServiceRequestListItemViewModel[] {
+    const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
+    const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
+    const serviceMap = new Map(services.map((service) => [service.id, service]));
+
+    return requests.map((request) => ({
+      request,
+      customerName:
+        customerMap.get(request.customerId)?.name ?? this.i18n.t('agenda.customerMissing'),
+      vehicleLabel: this.describeVehicle(vehicleMap.get(request.vehicleId)),
+      serviceLabel:
+        serviceMap.get(request.serviceId)?.name ?? this.i18n.t('agenda.serviceMissing'),
+    }));
+  }
+
+  formatReference(value: string | null | undefined): string {
+    return value?.trim() || this.i18n.t('common.notAvailable');
+  }
+
+  private describeVehicle(vehicle: VehicleViewModel | undefined): string {
     if (!vehicle) {
-      return fallbackVehicleId;
+      return this.i18n.t('agenda.vehicleMissing');
     }
 
     const details = [vehicle.brand, vehicle.model, vehicle.year ? `${vehicle.year}` : null]
@@ -448,5 +272,32 @@ export class AgendaPageComponent implements OnInit {
       .join(' ');
 
     return details ? `${vehicle.plate} - ${details}` : vehicle.plate;
+  }
+
+  formatServiceRequestStatus(
+    status: ServiceRequestViewModel['status'],
+  ): string {
+    return this.i18n.t(`agenda.requests.status.${status}`);
+  }
+
+  formatPreferredRequestDate(request: ServiceRequestViewModel): string {
+    return request.preferredDateTime
+      ? this.formatPreferredDateTime(request.preferredDateTime)
+      : request.preferredDate ?? this.i18n.t('common.notSet');
+  }
+
+  private formatPreferredDateTime(value: string): string {
+    const date = new Date(value);
+
+    return new Intl.DateTimeFormat(
+      this.i18n.language() === 'en' ? 'en-US' : 'es-AR',
+      {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      },
+    ).format(date);
   }
 }

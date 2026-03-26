@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 
 @Component({
   selector: 'at-quotes-page',
   standalone: true,
   imports: [PageShellComponent],
-  template: '<at-page-shell title="Quotes" description="Draft, send, and monitor quote statuses; approvals trigger backend transition to operation." />'
+  templateUrl: './quotes-page.component.html',
 })
-export class QuotesPageComponent {}
+export class QuotesPageComponent {
+  readonly i18n = inject(I18nService);
+}

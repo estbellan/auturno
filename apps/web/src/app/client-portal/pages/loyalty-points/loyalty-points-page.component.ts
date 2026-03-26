@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 
 @Component({
   selector: 'at-loyalty-points-page',
   standalone: true,
   imports: [PageShellComponent],
-  template: '<at-page-shell title="Loyalty Points" description="Simple points summary from completed work orders and configured workshop rules." />'
+  templateUrl: './loyalty-points-page.component.html',
 })
-export class LoyaltyPointsPageComponent {}
+export class LoyaltyPointsPageComponent {
+  readonly i18n = inject(I18nService);
+}

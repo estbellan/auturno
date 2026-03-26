@@ -1,0 +1,45 @@
+
+    <div class="login-card">
+
+      <h1 class="login-card__brand">
+        <span class="ms login-card__brand-icon" aria-hidden="true">garage</span>
+        <span class="login-card__brand-name">AUTURNO</span>
+      </h1>
+
+      <div class="login-card__copy">
+        <h2>{{ i18n.t('auth.login.title') }}</h2>
+        <p>{{ i18n.t('auth.login.copy') }}</p>
+      </div>
+
+      @if (sessionStore.isBootstrapping()) {
+        <div class="login-card__loading">
+          <span class="spinner"></span>
+          <span class="login-card__loading-text">{{ i18n.t('auth.login.checkingSession') }}</span>
+        </div>
+      }
+
+      @if (sessionStore.status() === 'forbidden') {
+        <div class="banner banner--error">
+          <span class="ms banner__icon">error</span>
+          <div class="banner__body">{{ i18n.t('auth.login.forbidden') }}</div>
+        </div>
+      }
+
+      @if (sessionStore.error()) {
+        <div class="banner banner--error">
+          <span class="ms banner__icon">error</span>
+          <div class="banner__body">{{ sessionStore.error() }}</div>
+        </div>
+      }
+
+      <div class="login-card__actions">
+        <button type="button" class="btn-filled login-card__primary-btn" (click)="login()">
+          <span class="ms ms--sm">login</span>
+          {{ i18n.t('common.login') }}
+        </button>
+        <button type="button" class="login-card__signup-link" (click)="signup()">
+          {{ i18n.t('common.signup') }}
+        </button>
+      </div>
+
+    </div>

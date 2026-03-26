@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { CreateServiceDto } from './dto/create-service.dto';
+import { UpdateServiceDto } from './dto/update-service.dto';
 import { Service, ServiceDocument } from './schemas/service.schema';
 import { ServiceEntity } from './service.entity';
 
@@ -50,11 +51,51 @@ export class ServicesService {
     return services.map((service) => this.toEntity(service));
   }
 
+  async update(
+    workshopId: string,
+    serviceId: string,
+    input: UpdateServiceDto,
+  ): Promise<ServiceEntity> {
+    const service = await this.serviceModel
+      .findOne({
+        _id: serviceId,
+        workshopId,
+      })
+      .exec();
+
+    if (!service) {
+      throw new NotFoundException('Service not found in workshop.');
+    }
+
+    const normalizedName = this.normalizeName(input.name);
+    const existing = await this.serviceModel
+      .findOne({
+        workshopId,
+        normalizedName,
+        _id: { $ne: serviceId },
+      })
+      .exec();
+
+    if (existing) {
+      throw new ConflictException('Service already exists in workshop.');
+    }
+
+    service.name = input.name.trim();
+    service.normalizedName = normalizedName;
+    service.estimatedDurationHours = input.estimatedDurationHours;
+    service.requiresDiagnostic = input.requiresDiagnostic;
+    await service.save();
+
+    return this.toEntity(service);
+  }
+
   async findByIdInWorkshop(workshopId: string, serviceId: string): Promise<ServiceEntity> {
-    const service = await this.serviceModel.findOne({
-      _id: serviceId,
-      workshopId,
-    });
+    const service = await this.serviceModel
+      .findOne({
+        _id: serviceId,
+        workshopId,
+      })
+      .exec();
 
     if (!service) {
       throw new NotFoundException('Service not found in workshop.');

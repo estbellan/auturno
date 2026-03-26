@@ -1,0 +1,90 @@
+<section class="card detail-card">
+  <div class="header-row section-header">
+    <h3>{{ i18n.t('diagnostic.title') }}</h3>
+    @if (actions.length) {
+      <div class="action-grid compact">
+        @for (action of actions; track action.id) {
+          <button type="button" [disabled]="actionLoading === action.id" (click)="actionSelected.emit(action.id)">
+            {{ actionLoading === action.id ? i18n.t('common.working') : action.label }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (diagnostic) {
+    <dl class="detail-grid">
+      <div><dt>{{ i18n.t('diagnostic.status') }}</dt><dd>{{ formatStatus(diagnostic.status) }}</dd></div>
+      <div><dt>{{ i18n.t('diagnostic.estimatedOperationHours') }}</dt><dd>{{ diagnostic.estimatedOperationHours ?? i18n.t('common.notSet') }}</dd></div>
+    </dl>
+
+    <div class="stack-block">
+      <dt>{{ i18n.t('diagnostic.summary') }}</dt>
+      <dd>{{ diagnostic.summary }}</dd>
+    </div>
+
+    <div class="stack-block">
+      <dt>{{ i18n.t('diagnostic.notes') }}</dt>
+      <dd>{{ diagnostic.notes || i18n.t('diagnostic.noNotes') }}</dd>
+    </div>
+
+    <div class="stack-block">
+      <dt>{{ i18n.t('diagnostic.recommendedServices') }}</dt>
+      <div class="pill-list">
+        @if (diagnostic.recommendedServices.length) {
+          @for (service of diagnostic.recommendedServices; track service) {
+            <span class="service-pill">{{ service }}</span>
+          }
+        } @else {
+          <span class="empty-copy">{{ i18n.t('diagnostic.noRecommendedServices') }}</span>
+        }
+      </div>
+    </div>
+  } @else {
+    <p class="empty-copy">{{ i18n.t('diagnostic.empty') }}</p>
+
+    <form class="editor-form" (ngSubmit)="createDraft.emit()">
+      <label class="field">
+        <span>{{ i18n.t('diagnostic.summary') }}</span>
+        <textarea name="summary" [(ngModel)]="form.summary" rows="3" required></textarea>
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('diagnostic.notes') }}</span>
+        <textarea name="notes" [(ngModel)]="form.notes" rows="3"></textarea>
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('diagnostic.estimatedOperationHours') }}</span>
+        <input type="number" name="estimatedOperationHours" [(ngModel)]="form.estimatedOperationHours" min="0" step="0.1" />
+      </label>
+
+      <div class="stack-block">
+        <div class="inline-header">
+          <dt>{{ i18n.t('diagnostic.recommendedServices') }}</dt>
+          <button type="button" class="secondary" (click)="addRecommendedService.emit()">{{ i18n.t('diagnostic.addService') }}</button>
+        </div>
+
+        <div class="editor-list">
+          @for (service of form.recommendedServices; track $index; let index = $index) {
+            <div class="editor-row">
+              <input type="text" [name]="'recommendedService' + index" [(ngModel)]="form.recommendedServices[index]" placeholder=" " />
+              <button
+                type="button"
+                class="secondary"
+                (click)="removeRecommendedService.emit(index)"
+                [disabled]="form.recommendedServices.length === 1"
+              >
+                {{ i18n.t('common.remove') }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="actionLoading === 'create-diagnostic' || !canCreateDiagnostic">
+        {{ actionLoading === 'create-diagnostic' ? i18n.t('common.working') : i18n.t('workOrders.detail.diagnosticCreate') }}
+      </button>
+    </form>
+  }
+</section>

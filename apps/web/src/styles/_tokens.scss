@@ -1,0 +1,220 @@
+// ─── AUTURNO × Material Design 3 Token System ────────────────────────────────
+// Color roles follow M3 naming (primary, surface, outline…).
+// All values live here. Components use only var(--at-*).
+// Dark mode: two separate rule sets to avoid invalid CSS.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@mixin dark-tokens {
+  color-scheme: dark;
+
+  // ── Color roles ──────────────────────────────────────────────────
+  --at-primary:              #60a5fa;   // blue-400
+  --at-on-primary:           #1e3a8a;   // blue-900
+  --at-primary-container:    #1e40af;   // blue-800
+  --at-on-primary-container: #bfdbfe;   // blue-100
+
+  --at-secondary:              #a78bfa;  // violet-400
+  --at-on-secondary:           #2e1065;
+  --at-secondary-container:    #4c1d95;
+  --at-on-secondary-container: #ede9fe;
+
+  --at-surface:          #1c1b1f;
+  --at-surface-dim:      #141218;
+  --at-surface-bright:   #3b383e;
+  --at-surface-1:        color-mix(in srgb, #60a5fa  5%, #1c1b1f);
+  --at-surface-2:        color-mix(in srgb, #60a5fa  8%, #1c1b1f);
+  --at-surface-3:        color-mix(in srgb, #60a5fa 11%, #1c1b1f);
+  --at-surface-4:        color-mix(in srgb, #60a5fa 12%, #1c1b1f);
+  --at-surface-variant:  #2d2b31;
+  --at-on-surface:       #e6e1e5;
+  --at-on-surface-var:   #cac4d0;
+
+  --at-outline:          #938f99;
+  --at-outline-variant:  #49454f;
+
+  --at-bg:               #141218;
+  --at-on-bg:            #e6e1e5;
+
+  // ── Error / Status ────────────────────────────────────────────────
+  --at-error:            #f2b8b5;
+  --at-on-error:         #601410;
+  --at-error-container:  #8c1d18;
+  --at-on-error-container: #f9dedc;
+
+  --at-ok:               #6dd58c;
+  --at-ok-container:     #0a5724;
+  --at-on-ok-container:  #b7f0c6;
+
+  --at-warn:             #ffc107;
+  --at-warn-container:   #5d3c00;
+  --at-on-warn-container: #ffdf99;
+
+  // ── Inverse ───────────────────────────────────────────────────────
+  --at-inverse-surface:  #e6e1e5;
+  --at-inverse-on-surface: #313033;
+  --at-inverse-primary:  #1d4ed8;
+
+  // ── Scrim / shadow ────────────────────────────────────────────────
+  --at-scrim:            rgba(0, 0, 0, 0.60);
+  --at-shadow:           rgba(0, 0, 0, 0.45);
+}
+
+// ── Light theme (default) ──────────────────────────────────────────────────
+:root {
+  // ── Color roles ──────────────────────────────────────────────────
+  --at-primary:              #1d4ed8;   // blue-700
+  --at-on-primary:           #ffffff;
+  --at-primary-container:    #dbeafe;   // blue-100
+  --at-on-primary-container: #1e3a8a;   // blue-900
+
+  --at-secondary:              #7c3aed;  // violet-600
+  --at-on-secondary:           #ffffff;
+  --at-secondary-container:    #ede9fe;  // violet-100
+  --at-on-secondary-container: #3b0764;
+
+  --at-surface:          #fffbfe;
+  --at-surface-dim:      #ddd8e0;
+  --at-surface-bright:   #fffbfe;
+  --at-surface-1:        color-mix(in srgb, #1d4ed8  5%, #fffbfe);
+  --at-surface-2:        color-mix(in srgb, #1d4ed8  8%, #fffbfe);
+  --at-surface-3:        color-mix(in srgb, #1d4ed8 11%, #fffbfe);
+  --at-surface-4:        color-mix(in srgb, #1d4ed8 12%, #fffbfe);
+  --at-surface-variant:  #e7e0ec;
+  --at-on-surface:       #1c1b1f;
+  --at-on-surface-var:   #49454f;
+
+  --at-outline:          #79747e;
+  --at-outline-variant:  #cac4d0;
+
+  --at-bg:               #fffbfe;
+  --at-on-bg:            #1c1b1f;
+
+  // ── Error / Status ────────────────────────────────────────────────
+  --at-error:            #b3261e;
+  --at-on-error:         #ffffff;
+  --at-error-container:  #f9dedc;
+  --at-on-error-container: #410e0b;
+
+  --at-ok:               #146c2e;
+  --at-ok-container:     #c3efcd;
+  --at-on-ok-container:  #002111;
+
+  --at-warn:             #7c4f00;
+  --at-warn-container:   #ffdea0;
+  --at-on-warn-container: #271900;
+
+  // ── Inverse ───────────────────────────────────────────────────────
+  --at-inverse-surface:  #313033;
+  --at-inverse-on-surface: #f4eff4;
+  --at-inverse-primary:  #d0bcff;
+
+  // ── Scrim / shadow ────────────────────────────────────────────────
+  --at-scrim:            rgba(0, 0, 0, 0.32);
+  --at-shadow:           rgba(0, 0, 0, 0.15);
+
+  // ── Shape (M3 scale) ─────────────────────────────────────────────
+  --at-shape-none:   0px;
+  --at-shape-xs:     4px;
+  --at-shape-sm:     8px;
+  --at-shape-md:     12px;
+  --at-shape-lg:     16px;
+  --at-shape-xl:     28px;
+  --at-shape-full:   9999px;
+
+  // ── Spacing (4-pt base) ───────────────────────────────────────────
+  --at-sp-1:  4px;
+  --at-sp-2:  8px;
+  --at-sp-3:  12px;
+  --at-sp-4:  16px;
+  --at-sp-5:  20px;
+  --at-sp-6:  24px;
+  --at-sp-8:  32px;
+  --at-sp-10: 40px;
+  --at-sp-12: 48px;
+
+  // ── Elevation (M3 tonal surface — shadows only for certain components) ──
+  --at-elev-1: 0 1px 2px rgba(0,0,0,0.10), 0 1px 3px 1px rgba(0,0,0,0.06);
+  --at-elev-2: 0 1px 2px rgba(0,0,0,0.10), 0 2px 6px 2px rgba(0,0,0,0.10);
+  --at-elev-3: 0 4px 8px 3px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.15);
+
+  // ── Motion (M3 easing) ───────────────────────────────────────────
+  --at-ease-std:      cubic-bezier(0.2, 0, 0, 1);
+  --at-ease-decel:    cubic-bezier(0, 0, 0, 1);
+  --at-ease-accel:    cubic-bezier(0.3, 0, 1, 1);
+  --at-ease-spring:   cubic-bezier(0.2, 0, 0.2, 1.4);
+  --at-dur-short1:    50ms;
+  --at-dur-short2:    100ms;
+  --at-dur-short3:    150ms;
+  --at-dur-short4:    200ms;
+  --at-dur-med1:      250ms;
+  --at-dur-med2:      300ms;
+  --at-dur-long1:     350ms;
+  --at-dur-long2:     400ms;
+
+  // ── Typography (M3 type scale) ───────────────────────────────────
+  --at-font:       'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --at-font-mono:  'JetBrains Mono', 'Cascadia Code', monospace;
+
+  // display
+  --at-display-lg:  57px; --at-display-lg-lh: 64px;
+  --at-display-md:  45px; --at-display-md-lh: 52px;
+  --at-display-sm:  36px; --at-display-sm-lh: 44px;
+  // headline
+  --at-headline-lg: 32px; --at-headline-lg-lh: 40px;
+  --at-headline-md: 28px; --at-headline-md-lh: 36px;
+  --at-headline-sm: 24px; --at-headline-sm-lh: 32px;
+  // title
+  --at-title-lg:    22px; --at-title-lg-lh:    28px;
+  --at-title-md:    16px; --at-title-md-lh:    24px;
+  --at-title-sm:    14px; --at-title-sm-lh:    20px;
+  // body
+  --at-body-lg:     16px; --at-body-lg-lh:     24px;
+  --at-body-md:     14px; --at-body-md-lh:     20px;
+  --at-body-sm:     12px; --at-body-sm-lh:     16px;
+  // label
+  --at-label-lg:    14px; --at-label-lg-lh:    20px;
+  --at-label-md:    12px; --at-label-md-lh:    16px;
+  --at-label-sm:    11px; --at-label-sm-lh:    16px;
+
+  // ── Z-index ───────────────────────────────────────────────────────
+  --at-z-base:    1;
+  --at-z-nav:     100;
+  --at-z-sticky:  200;
+  --at-z-drawer:  400;
+  --at-z-modal:   500;
+  --at-z-toast:   600;
+  --at-z-splash:  700;
+
+  // ── Layout ────────────────────────────────────────────────────────
+  --at-drawer-w:      360px;
+  --at-topbar-h:      64px;
+  --at-nav-bar-h:     80px;
+
+  // ── Portal accent overrides ───────────────────────────────────────
+  // (workshop uses default primary = blue)
+  // client portal overrides primary → violet
+}
+
+// ── Portal accent: client → violet ────────────────────────────────────────
+.portal-client {
+  --at-primary:              #7c3aed;
+  --at-on-primary:           #ffffff;
+  --at-primary-container:    #ede9fe;
+  --at-on-primary-container: #3b0764;
+  --at-inverse-primary:      #d0bcff;
+  --at-surface-1: color-mix(in srgb, #7c3aed  5%, var(--at-surface));
+  --at-surface-2: color-mix(in srgb, #7c3aed  8%, var(--at-surface));
+  --at-surface-3: color-mix(in srgb, #7c3aed 11%, var(--at-surface));
+}
+
+// ── Dark theme: explicit attribute ────────────────────────────────────────
+[data-theme="dark"] {
+  @include dark-tokens;
+}
+
+// ── Dark theme: OS preference (when no explicit override) ─────────────────
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark-tokens;
+  }
+}

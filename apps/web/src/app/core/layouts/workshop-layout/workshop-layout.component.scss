@@ -1,0 +1,254 @@
+/* ── Shell ─────────────────────────────────────────────────────────────── */
+.ws-shell {
+  display: flex;
+  flex-direction: row;
+  background: var(--at-bg);
+}
+
+/* ── Drawer (mobile: overlay, desktop: static) ─────────────────────── */
+.ws-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: var(--at-z-drawer);
+  width: 280px;
+  max-width: calc(100vw - 56px);
+  background: var(--at-surface-1);
+  border-right: 1px solid var(--at-outline-variant);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform var(--at-dur-med2) var(--at-ease-std),
+              width     var(--at-dur-med2) var(--at-ease-std);
+}
+.ws-drawer--open { transform: translateX(0); }
+
+/* ── Drawer header ──────────────────────────────────────────────────── */
+.ws-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--at-topbar-h);
+  padding: 0 var(--at-sp-3) 0 var(--at-sp-4);
+  flex-shrink: 0;
+  gap: var(--at-sp-2);
+}
+
+.ws-drawer__header--collapsed {
+  justify-content: center;
+}
+
+.ws-drawer__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-2);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ws-brand-icon {
+  font-size: 24px;
+  color: var(--at-primary);
+  flex-shrink: 0;
+}
+
+.ws-brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--at-primary);
+  white-space: nowrap;
+}
+
+/* ── Drawer user ────────────────────────────────────────────────────── */
+.ws-drawer__user {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-3);
+  padding: var(--at-sp-3) var(--at-sp-4);
+  border-top: 1px solid var(--at-outline-variant);
+  flex-shrink: 0;
+}
+.ws-drawer__user--compact {
+  justify-content: center;
+  padding: var(--at-sp-3) var(--at-sp-2);
+}
+
+.ws-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--at-primary-container);
+  color: var(--at-on-primary-container);
+  font-family: var(--at-font); font-weight: 600; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.ws-avatar-text {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+
+.ws-avatar-name {
+  font-size: 14px; font-weight: 500; color: var(--at-on-surface);
+  display: block;
+}
+
+.ws-avatar-email {
+  font-size: 11px; color: var(--at-on-surface-var);
+  display: block; opacity: 0.75;
+}
+
+.ws-avatar-role {
+  font-size: 12px; color: var(--at-on-surface-var);
+  display: block;
+}
+
+/* ── Nav destinations ─────────────────────────────────────────────── */
+.ws-drawer__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--at-sp-2) var(--at-sp-3);
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.ws-nav-dest {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-3);
+  min-height: 56px;
+  padding: 0 var(--at-sp-4);
+  border-radius: var(--at-shape-full);
+  color: var(--at-on-surface-var);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 400;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--at-dur-short3) var(--at-ease-std),
+              color     var(--at-dur-short3) var(--at-ease-std);
+}
+.ws-nav-dest::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: currentColor; opacity: 0;
+  transition: opacity var(--at-dur-short3) var(--at-ease-std);
+  pointer-events: none;
+}
+.ws-nav-dest:hover::before { opacity: 0.08; }
+.ws-nav-dest--active {
+  background: var(--at-secondary-container);
+  color: var(--at-on-secondary-container);
+  font-weight: 700;
+}
+/* Collapsed: icon-only, centered */
+.ws-nav-dest--collapsed {
+  justify-content: center;
+  padding: 0 var(--at-sp-2);
+}
+
+.ws-nav-dest__icon { flex-shrink: 0; font-size: 24px; }
+.ws-nav-dest__label { flex: 1; }
+
+/* ── Drawer footer ──────────────────────────────────────────────────── */
+.ws-drawer__footer {
+  padding: var(--at-sp-3) var(--at-sp-4) calc(var(--at-sp-4) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--at-outline-variant);
+  display: flex; flex-direction: column; gap: var(--at-sp-3);
+  flex-shrink: 0;
+}
+.ws-drawer__footer--compact {
+  align-items: center;
+  gap: var(--at-sp-2);
+  padding: var(--at-sp-3) var(--at-sp-2) calc(var(--at-sp-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.ws-drawer__footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: var(--at-sp-2);
+  flex-wrap: wrap;
+}
+
+.ws-logout-btn {
+  justify-content: flex-start;
+  padding-left: var(--at-sp-4);
+  font-size: 14px;
+}
+
+/* ── Mobile scrim ───────────────────────────────────────────────────── */
+.ws-scrim {
+  position: fixed; inset: 0;
+  z-index: calc(var(--at-z-drawer) - 1);
+  background: var(--at-scrim);
+  animation: at-fade-in var(--at-dur-short4) var(--at-ease-std);
+}
+
+/* ── Body ───────────────────────────────────────────────────────────── */
+.ws-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ── Top App Bar (mobile only) ──────────────────────────────────────── */
+.ws-top-bar {
+  position: sticky; top: 0;
+  z-index: var(--at-z-sticky);
+  height: var(--at-topbar-h);
+  background: var(--at-surface-2);
+  border-bottom: 1px solid var(--at-outline-variant);
+  display: flex; align-items: center;
+  padding: 0 var(--at-sp-4) 0 var(--at-sp-2);
+  gap: var(--at-sp-2);
+  flex-shrink: 0;
+}
+
+.ws-top-bar__brand {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-2);
+}
+
+.ws-main { flex: 1; }
+
+/* ── Desktop ≥ 1024px — permanent drawer ────────────────────────────── */
+@media (min-width: 1024px) {
+  .ws-shell {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Drawer becomes a static flex child */
+  .ws-drawer {
+    position: relative;
+    inset: auto;
+    transform: none;
+    height: 100dvh;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition: width var(--at-dur-med2) var(--at-ease-std);
+  }
+  .ws-drawer--collapsed { width: 72px; }
+
+  /* Toggle button stays visible on desktop */
+  .ws-drawer__toggle { display: flex; }
+
+  /* Hide mobile-only top bar */
+  .ws-top-bar { display: none; }
+
+  /* Body scrolls independently */
+  .ws-body {
+    min-height: auto;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .ws-main {
+    overflow-y: auto;
+    flex: 1;
+  }
+}

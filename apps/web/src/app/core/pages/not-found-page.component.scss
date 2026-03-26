@@ -1,0 +1,21 @@
+
+    .error-shell {
+      min-height: 100dvh;
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--at-sp-6) var(--at-sp-4);
+      background: var(--at-bg);
+    }
+
+    .error-content {
+      max-width: 440px; width: 100%;
+      display: flex; flex-direction: column;
+      align-items: flex-start;
+      gap: var(--at-sp-6);
+
+      &__text { display: flex; flex-direction: column; gap: var(--at-sp-3); }
+
+      &__actions {
+        display: flex; flex-wrap: wrap; gap: var(--at-sp-2);
+        .btn-filled, .btn-text { text-decoration: none; }
+      }
+    }

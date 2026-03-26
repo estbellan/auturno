@@ -1,0 +1,186 @@
+/* ── Page layout ──────────────────────────────────────────────────────── */
+.agenda-page { display: flex; flex-direction: column; }
+.page-body {
+  display: grid;
+  gap: var(--at-sp-4);
+  padding: var(--at-sp-4);
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.card {
+  border-radius: var(--at-shape-lg);
+  background: var(--at-surface);
+  border: 1px solid var(--at-outline-variant);
+}
+
+.action-card,
+.list-card {
+  padding: var(--at-sp-4) var(--at-sp-5);
+}
+
+.action-card {
+  display: grid;
+  gap: var(--at-sp-3);
+}
+
+/* ── Section header ───────────────────────────────────────────────────── */
+.action-copy,
+.section-header {
+  display: grid;
+  gap: var(--at-sp-1);
+}
+
+.section-header { margin-bottom: var(--at-sp-3); }
+
+h2, h3, p { margin: 0; }
+
+.section-header p,
+.action-copy p { color: var(--at-on-surface-var); font-size: 14px; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.action-link,
+.primary-button,
+.secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--at-sp-1);
+  padding: var(--at-sp-2) var(--at-sp-4);
+  border-radius: var(--at-shape-full);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--at-dur-short3) var(--at-ease-std);
+
+  &[disabled] { opacity: 0.5; cursor: default; pointer-events: none; }
+}
+
+.action-link,
+.primary-button { background: var(--at-primary); color: var(--at-on-primary); }
+
+.secondary-link { background: var(--at-secondary-container); color: var(--at-on-secondary-container); }
+
+.static-pill { cursor: default; }
+
+/* ── Agenda list ──────────────────────────────────────────────────────── */
+.agenda-list { display: grid; gap: var(--at-sp-3); }
+
+.agenda-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--at-sp-3);
+  padding: var(--at-sp-4);
+  border-radius: var(--at-shape-md);
+  border: 1px solid var(--at-outline-variant);
+  background: var(--at-surface-2);
+}
+
+.agenda-main {
+  display: grid;
+  gap: var(--at-sp-3);
+  width: 100%;
+}
+
+.headline-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--at-sp-3);
+  align-items: flex-start;
+}
+
+/* ── Typography helpers ───────────────────────────────────────────────── */
+.eyebrow,
+.detail-label {
+  color: var(--at-on-surface-var);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+/* ── Detail grid ─────────────────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  gap: var(--at-sp-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  span { color: var(--at-on-surface); font-size: 14px; }
+  small { display: block; margin-top: 2px; color: var(--at-on-surface-var); font-size: 12px; }
+}
+
+/* ── Reference grid ───────────────────────────────────────────────────── */
+.reference-grid {
+  display: grid;
+  gap: 4px;
+  padding-top: var(--at-sp-2);
+  border-top: 1px solid var(--at-outline-variant);
+  font-size: 12px;
+
+  p { color: var(--at-on-surface-var); margin: 0; }
+}
+
+/* ── Agenda actions ───────────────────────────────────────────────────── */
+.agenda-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--at-sp-2);
+}
+
+/* ── Status cards ─────────────────────────────────────────────────────── */
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-2);
+  padding: var(--at-sp-3) var(--at-sp-4);
+  border-radius: var(--at-shape-sm);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.neutral {
+  background: var(--at-surface-variant);
+  color: var(--at-on-surface);
+  border-color: var(--at-outline-variant);
+}
+
+.error {
+  background: var(--at-error-container);
+  color: var(--at-on-error-container);
+  border-color: color-mix(in srgb, var(--at-error) 30%, transparent);
+}
+
+/* ── Status badges ────────────────────────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--at-sp-1) var(--at-sp-3);
+  border-radius: var(--at-shape-full);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge.work-order {
+  background: var(--at-primary-container);
+  color: var(--at-on-primary-container);
+}
+
+.status-badge.appointment {
+  background: var(--at-surface-variant);
+  color: var(--at-on-surface-var);
+}
+
+/* ── Desktop ─────────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .action-card { grid-template-columns: 1fr auto; align-items: center; }
+  .agenda-item { grid-template-columns: 1fr auto; align-items: start; }
+  .agenda-actions { flex-direction: column; align-self: stretch; justify-content: center; }
+}

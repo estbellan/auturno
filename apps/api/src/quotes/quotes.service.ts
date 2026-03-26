@@ -7,8 +7,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { AuditService } from '../audit/audit.service';
+import { CurrentUserContext } from '../auth/types';
+import { CustomersService } from '../customers/customers.service';
 import { DiagnosticsService } from '../diagnostics/diagnostics.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { WorkOrdersService } from '../work-orders/work-orders.service';
+import { CustomerQuoteResponseDto } from './dto/customer-quote-response.dto';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { QuoteEntity, QuoteItemEntity } from './quote.entity';
 import { Quote, QuoteDocument } from './schemas/quote.schema';
@@ -19,7 +23,9 @@ export class QuotesService {
     @InjectModel(Quote.name)
     private readonly quoteModel: Model<QuoteDocument>,
     private readonly auditService: AuditService,
+    private readonly customersService: CustomersService,
     private readonly diagnosticsService: DiagnosticsService,
+    private readonly notificationsService: NotificationsService,
     private readonly workOrdersService: WorkOrdersService,
   ) {}
 
@@ -161,6 +167,11 @@ export class QuotesService {
       },
     });
 
+    await this.notificationsService.registerQuoteSent(
+      workshopId,
+      quote.workOrderId,
+    );
+
     return this.toEntity(quote);
   }
 
@@ -168,6 +179,7 @@ export class QuotesService {
     workshopId: string,
     quoteId: string,
     actorUserId: string,
+    metadata?: Record<string, unknown>,
   ): Promise<QuoteEntity> {
     const quote = await this.findDocumentByIdInWorkshop(workshopId, quoteId);
 
@@ -197,6 +209,7 @@ export class QuotesService {
       quote.workOrderId,
       'in_operation',
       actorUserId,
+      metadata,
     );
 
     await this.auditService.create({
@@ -208,6 +221,7 @@ export class QuotesService {
       metadata: {
         workOrderId: quote.workOrderId,
         respondedAt: quote.respondedAt?.toISOString() ?? null,
+        ...(metadata ?? {}),
       },
     });
 
@@ -218,6 +232,7 @@ export class QuotesService {
     workshopId: string,
     quoteId: string,
     actorUserId: string,
+    metadata?: Record<string, unknown>,
   ): Promise<QuoteEntity> {
     const quote = await this.findDocumentByIdInWorkshop(workshopId, quoteId);
 
@@ -247,6 +262,7 @@ export class QuotesService {
       quote.workOrderId,
       'closed',
       actorUserId,
+      metadata,
     );
 
     await this.auditService.create({
@@ -258,6 +274,7 @@ export class QuotesService {
       metadata: {
         workOrderId: quote.workOrderId,
         respondedAt: quote.respondedAt?.toISOString() ?? null,
+        ...(metadata ?? {}),
       },
     });
 
@@ -291,6 +308,39 @@ export class QuotesService {
     }
 
     return this.toEntity(quote);
+  }
+
+  async respondFromClientPortal(
+    workshopId: string,
+    quoteId: string,
+    user: CurrentUserContext,
+    input: CustomerQuoteResponseDto,
+  ): Promise<QuoteEntity> {
+    const quote = await this.findDocumentByIdInWorkshop(workshopId, quoteId);
+    const workOrder = await this.workOrdersService.findByIdInWorkshop(
+      workshopId,
+      quote.workOrderId,
+    );
+
+    const customer = await this.customersService.resolvePortalCustomerInWorkshop(
+      workshopId,
+      user,
+    );
+
+    if (!customer || customer.id !== workOrder.clientId) {
+      throw new NotFoundException('Quote not found for customer.');
+    }
+
+    const metadata = {
+      source: 'client_portal',
+      comment: this.normalizeOptionalComment(input.comment),
+    };
+
+    if (input.decision === 'approve') {
+      return await this.approveQuote(workshopId, quoteId, user.id, metadata);
+    }
+
+    return await this.rejectQuote(workshopId, quoteId, user.id, metadata);
   }
 
   private async assertDiagnosticWorkOrderReadyForQuoteAction(
@@ -348,6 +398,11 @@ export class QuotesService {
     }
 
     return quote;
+  }
+
+  private normalizeOptionalComment(comment?: string): string | null {
+    const normalized = comment?.trim();
+    return normalized ? normalized : null;
   }
 
   private toEntity(quote: QuoteDocument): QuoteEntity {

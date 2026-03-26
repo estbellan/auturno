@@ -1,0 +1,172 @@
+<div class="services-page">
+  <at-page-shell
+    icon="build"
+    [title]="i18n.t('services.title')"
+    [description]="i18n.t('services.description')"
+  />
+
+  <div class="page-body">
+  <section class="card form-card">
+    <div class="section-copy">
+      <h2>{{ i18n.t('services.create') }}</h2>
+      <p>{{ i18n.t('services.createCopy') }}</p>
+    </div>
+
+    <form class="service-form" (ngSubmit)="submitCreate()">
+      <label class="field">
+        <span>{{ i18n.t('services.nameLabel') }}</span>
+        <input type="text" name="name" [(ngModel)]="createForm.name" required placeholder=" " />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('services.estimatedHours') }}</span>
+        <input
+          type="number"
+          name="estimatedDurationHours"
+          [(ngModel)]="createForm.estimatedDurationHours"
+          min="0.5"
+          step="0.5"
+          required
+          placeholder=" "
+        />
+      </label>
+
+      <label class="toggle-field">
+        <input
+          type="checkbox"
+          name="requiresDiagnostic"
+          [(ngModel)]="createForm.requiresDiagnostic"
+        />
+        <span>{{ i18n.t('services.requiresDiagnostic') }}</span>
+      </label>
+
+      @if (formError) {
+        <section class="status-card error">{{ formError }}</section>
+      }
+
+      @if (successMessage) {
+        <section class="status-card success">{{ successMessage }}</section>
+      }
+
+      <button type="submit" [disabled]="submitting || !canSubmitCreate">
+        {{ submitting ? i18n.t('services.creating') : i18n.t('services.createButton') }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card list-card">
+    <div class="section-copy">
+      <h2>{{ i18n.t('services.list') }}</h2>
+      <p>{{ i18n.t('services.listCopy') }}</p>
+    </div>
+
+    @if (loading) {
+      <section class="status-card neutral">{{ i18n.t('services.loading') }}</section>
+    } @else if (listError) {
+      <section class="status-card error">{{ listError }}</section>
+    } @else if (!services.length) {
+      <section class="status-card neutral">{{ i18n.t('services.empty') }}</section>
+    } @else {
+      <div class="service-list">
+        @for (service of services; track service.id) {
+          <article
+            class="service-card"
+            [class.diagnostic-service]="service.requiresDiagnostic"
+          >
+            @if (editingServiceId === service.id) {
+              <form class="edit-form" (ngSubmit)="submitEdit(service.id)">
+                <div class="service-header">
+                  <div>
+                    <p class="eyebrow">{{ i18n.t('services.editTitle') }}</p>
+                    <h3>{{ service.name }}</h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    (click)="cancelEdit()"
+                    [disabled]="editingLoading"
+                  >
+                    {{ i18n.t('common.cancel') }}
+                  </button>
+                </div>
+
+                <label class="field">
+                  <span>{{ i18n.t('services.nameLabel') }}</span>
+                  <input type="text" name="editName" [(ngModel)]="editForm.name" required placeholder=" " />
+                </label>
+
+                <label class="field">
+                  <span>{{ i18n.t('services.estimatedHours') }}</span>
+                  <input
+                    type="number"
+                    name="editEstimatedDurationHours"
+                    [(ngModel)]="editForm.estimatedDurationHours"
+                    min="0.5"
+                    step="0.5"
+                    required
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="toggle-field">
+                  <input
+                    type="checkbox"
+                    name="editRequiresDiagnostic"
+                    [(ngModel)]="editForm.requiresDiagnostic"
+                  />
+                  <span>{{ i18n.t('services.requiresDiagnostic') }}</span>
+                </label>
+
+                @if (editError) {
+                  <section class="status-card error">{{ editError }}</section>
+                }
+
+                <div class="edit-actions">
+                  <button type="submit" [disabled]="editingLoading || !canSubmitEdit">
+                    {{ editingLoading ? i18n.t('services.saving') : i18n.t('services.save') }}
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <div class="service-header">
+                <div>
+                  <p class="eyebrow">{{ i18n.t('services.eyebrow') }}</p>
+                  <h3>{{ service.name }}</h3>
+                </div>
+
+                <div class="header-actions">
+                  @if (service.requiresDiagnostic) {
+                    <span class="service-badge diagnostic">{{ i18n.t('services.badge.diagnostic') }}</span>
+                  } @else {
+                    <span class="service-badge direct">{{ i18n.t('services.badge.direct') }}</span>
+                  }
+
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    (click)="startEdit(service)"
+                  >
+                    {{ i18n.t('common.edit') }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="service-details">
+                <div>
+                  <p class="detail-label">{{ i18n.t('services.detailHours') }}</p>
+                  <span>{{ formatHours(service.estimatedDurationHours) }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('services.detailId') }}</p>
+                  <span>{{ service.id }}</span>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+  </div>
+</div>

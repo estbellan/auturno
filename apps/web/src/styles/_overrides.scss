@@ -1,0 +1,314 @@
+// ─── Global overrides ─────────────────────────────────────────────────────────
+// Page components use ViewEncapsulation.Emulated so their inline styles win
+// over plain class selectors. We use :where() to keep specificity at 0 for
+// base defaults and use !important only for colour corrections in dark mode.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── 1. Body-level surface correction ─────────────────────────────────────────
+
+html {
+  background: var(--at-bg);
+  color: var(--at-on-surface);
+}
+
+// ── 2. Exact hex → token mapping (covers every page component) ────────────────
+// The following rule set converts the hardcoded palette used in all page
+// components. Because component ViewEncapsulation adds an attribute selector
+// of specificity (0,1,0) to all their rules, we use an extra class/attribute
+// to match that specificity where needed.
+
+// Surface
+:where(body) .card,
+:where(body) [class$="-card"],
+:where(body) [class*="-card "],
+:where(body) .list-card,
+:where(body) .action-card,
+:where(body) .hero-card,
+:where(body) .detail-card,
+:where(body) .filters-card,
+:where(body) .work-order-card,
+:where(body) .milestone-card {
+  background: var(--at-surface) !important;
+  border-color: var(--at-outline-variant) !important;
+  color: var(--at-on-surface) !important;
+}
+
+:where(body) .milestone-card.current {
+  background: var(--at-primary-container) !important;
+  border-color: var(--at-primary) !important;
+}
+
+// Page wrappers
+:where(body) .agenda-page,
+:where(body) .work-orders-page,
+:where(body) .client-home,
+:where(body) .status-page,
+:where(body) .at-page {
+  background: var(--at-bg) !important;
+  color: var(--at-on-surface) !important;
+}
+
+// List items inside cards
+:where(body) .list-item,
+:where(body) .agenda-item,
+:where(body) .work-order-item {
+  background: var(--at-surface) !important;
+  border-color: var(--at-outline-variant) !important;
+  color: var(--at-on-surface) !important;
+
+  &:hover { background: var(--at-surface-2) !important; }
+}
+
+// ── 3. Typography ─────────────────────────────────────────────────────────────
+
+:where(body) .eyebrow {
+  color: var(--at-primary) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+:where(body) .section-label,
+:where(body) .panel-label,
+:where(body) .detail-label,
+:where(body) .item-kicker {
+  color: var(--at-on-surface-var) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+:where(body) h1,
+:where(body) h2,
+:where(body) h3,
+:where(body) h4 {
+  color: var(--at-on-surface) !important;
+}
+
+:where(body) p,
+:where(body) dd,
+:where(body) .support-copy,
+:where(body) .section-copy {
+  color: var(--at-on-surface-var) !important;
+}
+
+:where(body) dt {
+  color: var(--at-on-surface-var) !important;
+  font-size: 11px !important;
+}
+
+:where(body) strong {
+  color: var(--at-on-surface) !important;
+}
+
+// ── 4. Buttons ────────────────────────────────────────────────────────────────
+
+// Teal primary (client portal, old #0f766e)
+:where(body) .primary-link,
+:where(body) a.primary-link {
+  background: var(--at-primary) !important;
+  color: var(--at-on-primary) !important;
+  border-radius: var(--at-shape-full) !important;
+  text-decoration: none !important;
+  border: none !important;
+}
+
+// Blue primary buttons (workshop, old #1d4ed8)
+:where(body) .primary-button,
+:where(body) button.primary-button {
+  background: var(--at-primary) !important;
+  color: var(--at-on-primary) !important;
+  border-radius: var(--at-shape-full) !important;
+  border: none !important;
+}
+
+// Secondary buttons (old gray/teal variants)
+:where(body) .secondary-button,
+:where(body) button.secondary-button,
+:where(body) .secondary-link,
+:where(body) a.secondary-link {
+  background: var(--at-secondary-container) !important;
+  color: var(--at-on-secondary-container) !important;
+  border-radius: var(--at-shape-full) !important;
+  border: none !important;
+  text-decoration: none !important;
+}
+
+// Action links (old .action-link)
+:where(body) .action-link,
+:where(body) a.action-link {
+  background: var(--at-primary) !important;
+  color: var(--at-on-primary) !important;
+  border-radius: var(--at-shape-full) !important;
+  text-decoration: none !important;
+}
+
+// Static pills (read-only chips)
+:where(body) .static-pill {
+  background: var(--at-surface-variant) !important;
+  color: var(--at-on-surface-var) !important;
+  border-radius: var(--at-shape-full) !important;
+}
+
+// ── 5. Status chips ────────────────────────────────────────────────────────────
+
+// Work order type chips
+:where(body) .type-chip {
+  background: var(--at-primary-container) !important;
+  color: var(--at-on-primary-container) !important;
+  border-radius: var(--at-shape-full) !important;
+}
+
+:where(body) .type-chip.diagnostic {
+  background: var(--at-warn-container) !important;
+  color: var(--at-on-warn-container) !important;
+}
+
+// Status badge / chip patterns (maps hex clusters to M3 semantic tokens)
+:where(body) .status-badge,
+:where(body) .status-chip,
+:where(body) .milestone-chip {
+  border-radius: var(--at-shape-full) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+:where(body) .status-badge.work-order {
+  background: var(--at-primary-container) !important;
+  color: var(--at-on-primary-container) !important;
+}
+
+:where(body) .status-badge.appointment {
+  background: var(--at-surface-variant) !important;
+  color: var(--at-on-surface-var) !important;
+}
+
+// Work order status classes
+:where(body) .status-scheduled,
+:where(body) .status-reception {
+  background: var(--at-info-container, var(--at-primary-container)) !important;
+  color: var(--at-on-primary-container) !important;
+}
+
+:where(body) .status-in-diagnosis,
+:where(body) .status-in-operation {
+  background: var(--at-primary-container) !important;
+  color: var(--at-on-primary-container) !important;
+}
+
+:where(body) .status-quote-sent,
+:where(body) .status-awaiting-approval {
+  background: var(--at-warn-container) !important;
+  color: var(--at-on-warn-container) !important;
+}
+
+:where(body) .status-ready {
+  background: var(--at-ok-container) !important;
+  color: var(--at-on-ok-container) !important;
+}
+
+:where(body) .status-closed,
+:where(body) .status-picked-up {
+  background: var(--at-surface-variant) !important;
+  color: var(--at-on-surface-var) !important;
+}
+
+// ── 6. Status cards / banners ────────────────────────────────────────────────
+
+:where(body) .status-card {
+  border-radius: var(--at-shape-sm) !important;
+  font-size: 14px !important;
+}
+
+:where(body) .status-card.neutral {
+  background: var(--at-surface-variant) !important;
+  color: var(--at-on-surface) !important;
+  border-color: var(--at-outline-variant) !important;
+}
+
+:where(body) .status-card.error {
+  background: var(--at-error-container) !important;
+  color: var(--at-on-error-container) !important;
+  border-color: color-mix(in srgb, var(--at-error) 30%, transparent) !important;
+}
+
+:where(body) .status-card.success {
+  background: var(--at-ok-container) !important;
+  color: var(--at-on-ok-container) !important;
+  border-color: var(--at-ok) !important;
+}
+
+// ── 7. Form inputs ─────────────────────────────────────────────────────────────
+
+// Bare inputs outside .field (legacy / standalone fallback)
+:where(body) input[type="text"],
+:where(body) input[type="email"],
+:where(body) input[type="tel"],
+:where(body) input[type="number"],
+:where(body) input[type="date"],
+:where(body) input[type="datetime-local"],
+:where(body) input[type="search"],
+:where(body) select,
+:where(body) textarea {
+  background: var(--at-surface) !important;
+  color: var(--at-on-surface) !important;
+  border-color: var(--at-outline) !important;
+
+  &:focus {
+    border-color: var(--at-primary) !important;
+    outline: none !important;
+  }
+
+  &::placeholder { color: var(--at-on-surface-var) !important; }
+}
+
+// M3 floating label fields — inputs/textareas get transparent bg so the border
+// shows through cleanly. Select keeps surface bg so native options popup
+// inherits the correct background and color-scheme.
+:where(body) .field input,
+:where(body) .field textarea {
+  background: transparent !important;
+  &::placeholder { color: transparent !important; }
+}
+
+:where(body) .field select {
+  background-color: var(--at-surface) !important;
+}
+
+// ── 8. Section / page headers ─────────────────────────────────────────────────
+
+:where(body) .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+// ── 9. Empty / info nav state ─────────────────────────────────────────────────
+
+:where(body) .empty-nav-state {
+  background: var(--at-warn-container) !important;
+  border-color: color-mix(in srgb, var(--at-warn) 40%, transparent) !important;
+  color: var(--at-on-warn-container) !important;
+  border-radius: var(--at-shape-sm) !important;
+}
+
+// ── 10. Diagnostic / detail grids ─────────────────────────────────────────────
+
+:where(body) .detail-grid,
+:where(body) .card-grid,
+:where(body) .reference-grid {
+  dt { color: var(--at-on-surface-var) !important; }
+  dd { color: var(--at-on-surface) !important; }
+}
+
+// ── 11. Ghost / outline patterns ──────────────────────────────────────────────
+
+:where(body) .ghost-button {
+  background: var(--at-surface-2) !important;
+  color: var(--at-on-surface) !important;
+  border-radius: var(--at-shape-full) !important;
+}

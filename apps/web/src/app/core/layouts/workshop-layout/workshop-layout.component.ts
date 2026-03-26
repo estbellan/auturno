@@ -1,38 +1,63 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
+import { LanguageSwitcherComponent } from '../../../shared/components/language-switcher/language-switcher.component';
+import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
+import {
+  getVisibleWorkshopNavItems,
+  getWorkshopRoleSummary,
+} from '../../access/workshop-access.config';
+import { AuthService } from '../../auth.service';
+import { I18nService } from '../../i18n/i18n.service';
+import { SessionStore } from '../../state/session.store';
 
 @Component({
   selector: 'at-workshop-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  template: `
-    <section class="app-shell">
-      <header class="layout-header">
-        <h1>Workshop Portal</h1>
-        <nav class="nav-list">
-          <a class="nav-link" routerLink="/workshop/agenda" routerLinkActive="active">Agenda</a>
-          <a class="nav-link" routerLink="/workshop/services" routerLinkActive="active">Services</a>
-          <a class="nav-link" routerLink="/workshop/work-orders" routerLinkActive="active">Work Orders</a>
-          <a class="nav-link" routerLink="/workshop/diagnostics" routerLinkActive="active">Diagnostics</a>
-          <a class="nav-link" routerLink="/workshop/quotes" routerLinkActive="active">Quotes</a>
-          <a class="nav-link" routerLink="/workshop/customers" routerLinkActive="active">Customers</a>
-          <a class="nav-link" routerLink="/workshop/vehicles" routerLinkActive="active">Vehicles</a>
-          <a class="nav-link" routerLink="/workshop/metrics" routerLinkActive="active">Metrics</a>
-        </nav>
-      </header>
-      <main class="layout-content">
-        <router-outlet />
-      </main>
-      <footer class="layout-footer">Operational portal - backend remains source of business truth.</footer>
-    </section>
-  `,
-  styles: [
-    `
-      .nav-link.active {
-        color: #1d4ed8;
-        font-weight: 700;
-      }
-    `,
-  ],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, ThemeToggleComponent, LanguageSwitcherComponent],
+  templateUrl: './workshop-layout.component.html',
+  styleUrl: './workshop-layout.component.scss',
 })
-export class WorkshopLayoutComponent {}
+export class WorkshopLayoutComponent {
+  private readonly authService = inject(AuthService);
+  readonly i18n = inject(I18nService);
+  private readonly sessionStore = inject(SessionStore);
+
+  readonly drawerOpen = signal(false);
+  readonly sidebarCollapsed = signal(false);
+  readonly currentUser = computed(() => this.sessionStore.currentUser());
+  readonly visibleNavItems = computed(() =>
+    getVisibleWorkshopNavItems(this.sessionStore.currentUser()),
+  );
+  readonly roleSummary = computed(() =>
+    getWorkshopRoleSummary(this.sessionStore.currentUser()),
+  );
+
+  isDesktop(): boolean {
+    return window.matchMedia('(min-width: 1024px)').matches;
+  }
+
+  toggleSidebar(): void {
+    if (this.isDesktop()) {
+      this.sidebarCollapsed.update(v => !v);
+    } else {
+      this.drawerOpen.set(false);
+    }
+  }
+
+  onNavClick(): void {
+    if (!this.isDesktop()) {
+      this.drawerOpen.set(false);
+    }
+  }
+
+  initials(name: string): string {
+    if (!name) return '?';
+    return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  async logout(): Promise<void> {
+    this.sessionStore.clearSession();
+    await this.authService.logout();
+  }
+}

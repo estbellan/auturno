@@ -1,0 +1,141 @@
+
+    /* ── Page layout ──────────────────────────────────────────────────────── */
+    .status-page { display: flex; flex-direction: column; }
+    .page-body {
+      display: grid;
+      gap: var(--at-sp-4);
+      padding: var(--at-sp-4);
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ── Cards ────────────────────────────────────────────────────────────── */
+    .card {
+      border-radius: var(--at-shape-lg);
+      background: var(--at-surface);
+      border: 1px solid var(--at-outline-variant);
+    }
+
+    .status-card,
+    .hero-card,
+    .detail-card { padding: var(--at-sp-4) var(--at-sp-5); }
+
+    .hero-card,
+    .detail-card { display: grid; gap: var(--at-sp-3); }
+
+    /* ── Typography ───────────────────────────────────────────────────────── */
+    .eyebrow,
+    dt,
+    .milestone-chip {
+      color: var(--at-on-surface-var);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .eyebrow,
+    .support-copy,
+    .section-copy h3,
+    .section-copy p,
+    h2, h4,
+    dt, dd,
+    .milestone-card p { margin: 0; }
+
+    .support-copy,
+    .section-copy p,
+    .milestone-card p { color: var(--at-on-surface-var); font-size: 14px; }
+
+    h2, h4, dd { color: var(--at-on-surface); }
+
+    dd { font-size: 14px; font-weight: 500; }
+
+    /* ── Detail grid ─────────────────────────────────────────────────────── */
+    .detail-grid {
+      display: grid;
+      gap: var(--at-sp-3);
+    }
+
+    /* ── Section copy ─────────────────────────────────────────────────────── */
+    .section-copy { display: grid; gap: var(--at-sp-1); }
+
+    /* ── Quote response form ──────────────────────────────────────────────── */
+    .quote-response-form { display: grid; gap: var(--at-sp-3); }
+
+    input, textarea, button { font: inherit; }
+
+    /* ── Decision actions ─────────────────────────────────────────────────── */
+    .decision-actions { display: flex; flex-wrap: wrap; gap: var(--at-sp-2); }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--at-sp-1);
+      padding: var(--at-sp-2) var(--at-sp-4);
+      border-radius: var(--at-shape-full);
+      border: none;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--at-primary);
+      color: var(--at-on-primary);
+
+      &[disabled] { opacity: 0.5; cursor: default; pointer-events: none; }
+    }
+
+    .secondary-button {
+      background: var(--at-secondary-container);
+      color: var(--at-on-secondary-container);
+    }
+
+    /* ── Milestones ───────────────────────────────────────────────────────── */
+    .milestone-list { display: grid; gap: var(--at-sp-3); }
+
+    .milestone-card {
+      display: grid;
+      gap: var(--at-sp-2);
+      padding: var(--at-sp-4);
+      border-radius: var(--at-shape-md);
+      border: 1px solid var(--at-outline-variant);
+      background: var(--at-surface-2);
+    }
+
+    .milestone-card.current {
+      border-color: var(--at-primary);
+      background: var(--at-primary-container);
+
+      h4, p { color: var(--at-on-primary-container) !important; }
+      .milestone-chip { color: var(--at-primary); }
+    }
+
+    .milestone-chip { width: fit-content; }
+
+    /* ── Alert cards ──────────────────────────────────────────────────────── */
+    .status-card {
+      display: flex;
+      align-items: center;
+      gap: var(--at-sp-2);
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .success {
+      background: var(--at-ok-container);
+      color: var(--at-on-ok-container);
+      border-color: var(--at-ok);
+    }
+
+    .error {
+      background: var(--at-error-container);
+      color: var(--at-on-error-container);
+      border-color: color-mix(in srgb, var(--at-error) 30%, transparent);
+    }
+
+    /* ── Desktop ─────────────────────────────────────────────────────────── */
+    @media (min-width: 768px) {
+      .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .milestone-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }

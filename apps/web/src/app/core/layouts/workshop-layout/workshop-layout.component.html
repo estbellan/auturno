@@ -1,0 +1,104 @@
+<div class="ws-shell portal-workshop">
+
+  <!-- ── Navigation Drawer (always collapsible) ── -->
+  <aside
+    class="ws-drawer"
+    [class.ws-drawer--open]="drawerOpen()"
+    [class.ws-drawer--collapsed]="sidebarCollapsed()"
+    [attr.aria-hidden]="!drawerOpen() && !isDesktop()">
+
+    <div class="ws-drawer__header" [class.ws-drawer__header--collapsed]="sidebarCollapsed()">
+      @if (!sidebarCollapsed()) {
+        <div class="ws-drawer__brand">
+          <span class="ms ws-brand-icon">garage</span>
+          <span class="ws-brand-name">AUTURNO</span>
+        </div>
+      }
+      <!-- Mobile: close button | Desktop: collapse toggle -->
+      <button
+        type="button"
+        class="btn-icon ws-drawer__toggle"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'"
+        (click)="toggleSidebar()">
+        <span class="ms">{{ sidebarCollapsed() ? 'menu' : 'menu_open' }}</span>
+      </button>
+    </div>
+
+    @if (currentUser(); as user) {
+      <div class="ws-drawer__user" [class.ws-drawer__user--compact]="sidebarCollapsed()">
+        <div class="ws-avatar" [title]="user.name">{{ initials(user.name) }}</div>
+        @if (!sidebarCollapsed()) {
+          <div class="ws-avatar-text">
+            <span class="ws-avatar-name truncate">{{ user.name }}</span>
+            <span class="ws-avatar-email truncate">{{ user.email }}</span>
+            <span class="ws-avatar-role truncate">{{ i18n.t(roleSummary().labelKey) }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <nav class="ws-drawer__nav" aria-label="Menú del taller">
+      @for (item of visibleNavItems(); track item.route) {
+        <a class="ws-nav-dest"
+           [class.ws-nav-dest--collapsed]="sidebarCollapsed()"
+           [routerLink]="item.route"
+           routerLinkActive="ws-nav-dest--active"
+           [title]="sidebarCollapsed() ? i18n.t(item.labelKey) : ''"
+           (click)="onNavClick()">
+          <span class="ms ws-nav-dest__icon">{{ item.icon }}</span>
+          @if (!sidebarCollapsed()) {
+            <span class="ws-nav-dest__label">{{ i18n.t(item.labelKey) }}</span>
+          }
+        </a>
+      }
+    </nav>
+
+    @if (!sidebarCollapsed()) {
+      <div class="ws-drawer__footer">
+        <div class="ws-drawer__footer-row">
+          <at-language-switcher />
+          <at-theme-toggle />
+        </div>
+
+        <button type="button" class="btn-error ws-logout-btn" (click)="logout()">
+          <span class="ms ms--sm">logout</span>
+          {{ i18n.t('common.logout') }}
+        </button>
+      </div>
+    } @else {
+      <div class="ws-drawer__footer ws-drawer__footer--compact">
+        <button type="button" class="btn-icon" (click)="logout()" [title]="i18n.t('common.logout')">
+          <span class="ms">logout</span>
+        </button>
+      </div>
+    }
+
+  </aside>
+
+  <!-- Mobile scrim -->
+  @if (drawerOpen()) {
+    <div class="ws-scrim" aria-hidden="true" (click)="drawerOpen.set(false)"></div>
+  }
+
+  <!-- ── Body: top-bar (mobile only) + main ── -->
+  <div class="ws-body">
+
+    <!-- Top bar: only shown on mobile, carries brand + open-drawer button -->
+    <header class="ws-top-bar">
+      <button type="button" class="btn-icon ws-top-bar__menu-btn"
+              aria-label="Abrir menú" (click)="drawerOpen.set(true)">
+        <span class="ms">menu</span>
+      </button>
+      <div class="ws-top-bar__brand">
+        <span class="ms ws-brand-icon">garage</span>
+        <span class="ws-brand-name">AUTURNO</span>
+      </div>
+    </header>
+
+    <main class="ws-main">
+      <router-outlet />
+    </main>
+
+  </div>
+
+</div>

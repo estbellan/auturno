@@ -72,3 +72,4 @@ export class WorkOrder {
 export const WorkOrderSchema = SchemaFactory.createForClass(WorkOrder);
 
 WorkOrderSchema.index({ workshopId: 1, appointmentId: 1 }, { unique: true });
+WorkOrderSchema.index({ workshopId: 1, createdAt: -1 });

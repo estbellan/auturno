@@ -1,0 +1,117 @@
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--at-sp-5);
+      background: var(--at-surface);
+      border-radius: var(--at-shape-xl);
+      padding: var(--at-sp-8) var(--at-sp-6);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4),
+                  0 4px 16px rgba(0, 0, 0, 0.24);
+      border: 1px solid var(--at-outline-variant);
+
+      &__brand {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--at-primary);
+        line-height: 1;
+      }
+
+      &__brand-icon {
+        font-family: 'Material Symbols Outlined';
+        font-size: 36px;
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 36;
+        font-weight: normal;
+        font-style: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        flex-shrink: 0;
+        color: var(--at-primary);
+      }
+
+      &__brand-name {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--at-primary);
+        line-height: 1;
+      }
+
+      &__copy {
+        display: flex;
+        flex-direction: column;
+        gap: var(--at-sp-2);
+
+        h2 {
+          margin: 0;
+          font-size: 26px;
+          font-weight: 400;
+          color: var(--at-on-surface);
+          line-height: 1.2;
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          color: var(--at-on-surface-var);
+          line-height: 1.55;
+        }
+      }
+
+      &__loading {
+        display: flex;
+        align-items: center;
+        gap: var(--at-sp-3);
+      }
+
+      &__loading-text {
+        font-size: 14px;
+        color: var(--at-on-surface-var);
+      }
+
+      &__actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: var(--at-sp-3);
+        padding-top: var(--at-sp-2);
+      }
+
+      &__primary-btn {
+        height: 52px;
+        width:100%;
+        padding: 0 var(--at-sp-8);
+        border-radius: var(--at-shape-full);
+        font-size: 15px;
+      }
+
+      &__signup-link {
+        align-self: center;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--at-sp-1);
+        background: none;
+        border: none;
+        color: var(--at-primary);
+        font-family: var(--at-font);
+        font-size: var(--at-body-md);
+        cursor: pointer;
+        padding: var(--at-sp-1) var(--at-sp-2);
+        border-radius: var(--at-shape-xs);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: color-mix(in srgb, var(--at-primary) 40%, transparent);
+        transition: text-decoration-color var(--at-dur-short3) var(--at-ease-std);
+
+        &:hover {
+          text-decoration-color: var(--at-primary);
+        }
+      }
+    }

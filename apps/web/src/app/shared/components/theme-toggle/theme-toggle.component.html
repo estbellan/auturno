@@ -1,0 +1,14 @@
+
+    <div class="theme-seg" role="group" [attr.aria-label]="'Tema: ' + theme.mode()">
+      @for (opt of options; track opt.mode) {
+        <button
+          type="button"
+          class="theme-seg__btn"
+          [class.active]="theme.mode() === opt.mode"
+          [title]="opt.label"
+          [attr.aria-pressed]="theme.mode() === opt.mode"
+          (click)="theme.setMode(opt.mode)">
+          <span class="ms ms--sm">{{ opt.icon }}</span>
+        </button>
+      }
+    </div>

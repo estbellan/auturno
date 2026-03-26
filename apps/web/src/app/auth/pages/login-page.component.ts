@@ -1,56 +1,32 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
 import { AuthService } from '../../core/auth.service';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { SessionStore } from '../../core/state/session.store';
 
 @Component({
   selector: 'at-login-page',
   standalone: true,
-  template: `
-    <article class="card">
-      <h2>Authentication Gateway</h2>
-      <p>
-        Auth0 SPA login entry point. Frontend captures the session and access token,
-        while the API remains the source of truth for authorization, tenancy, RBAC,
-        and workflow validation.
-      </p>
-
-      <div class="actions">
-        <button type="button" (click)="login()">Log in</button>
-        <button type="button" (click)="signup()">Sign up</button>
-      </div>
-    </article>
-  `,
-  styles: [`
-    .card {
-      max-width: 520px;
-      margin: 40px auto;
-      padding: 24px;
-      border-radius: 16px;
-      background: #fff;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    button {
-      padding: 10px 16px;
-      border: 0;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-  `],
+  templateUrl: './login-page.component.html',
+  styleUrl: './login-page.component.scss',
 })
 export class LoginPageComponent {
-  constructor(private readonly authService: AuthService) {}
+  private readonly authService = inject(AuthService);
+  readonly i18n = inject(I18nService);
+  private readonly route = inject(ActivatedRoute);
+  readonly sessionStore = inject(SessionStore);
+  readonly returnUrl = computed(() =>
+    this.sessionStore.resolveReturnUrl(
+      this.route.snapshot.queryParamMap.get('returnUrl'),
+    ),
+  );
 
-  async login() {
-    await this.authService.login();
+  async login(): Promise<void> {
+    await this.authService.login(this.returnUrl() ?? '/');
   }
 
-  async signup() {
-    await this.authService.signup();
+  async signup(): Promise<void> {
+    await this.authService.signup(this.returnUrl() ?? '/');
   }
 }

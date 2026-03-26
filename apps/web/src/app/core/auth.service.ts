@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService as Auth0AngularService } from '@auth0/auth0-angular';
-import { firstValueFrom } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -8,8 +8,10 @@ import { environment } from '../../environments/environment';
 })
 export class AuthService {
   private readonly auth0 = inject(Auth0AngularService);
+  private readonly returnUrlStorageKey = 'auturno:return-url';
 
-  async login(): Promise<void> {
+  async login(returnTo = '/'): Promise<void> {
+    this.storeReturnUrl(returnTo);
     await this.auth0.loginWithRedirect({
       authorizationParams: {
         redirect_uri: window.location.origin,
@@ -18,7 +20,8 @@ export class AuthService {
     });
   }
 
-  async signup(): Promise<void> {
+  async signup(returnTo = '/'): Promise<void> {
+    this.storeReturnUrl(returnTo);
     await this.auth0.loginWithRedirect({
       authorizationParams: {
         redirect_uri: window.location.origin,
@@ -28,7 +31,19 @@ export class AuthService {
     });
   }
 
+  async changePassword(): Promise<void> {
+    this.storeReturnUrl(window.location.pathname);
+    await this.auth0.loginWithRedirect({
+      authorizationParams: {
+        redirect_uri: window.location.origin,
+        audience: environment.auth0Audience,
+        prompt: 'login',
+      },
+    });
+  }
+
   async logout(): Promise<void> {
+    this.clearReturnUrl();
     this.auth0.logout({
       logoutParams: {
         returnTo: window.location.origin,
@@ -53,5 +68,29 @@ export class AuthService {
 
   async isAuthenticated(): Promise<boolean> {
     return await firstValueFrom(this.auth0.isAuthenticated$);
+  }
+
+  async waitUntilReady(): Promise<void> {
+    await firstValueFrom(
+      this.auth0.isLoading$.pipe(filter((isLoading) => !isLoading)),
+    );
+  }
+
+  consumeReturnUrl(): string | null {
+    const value = window.sessionStorage.getItem(this.returnUrlStorageKey);
+    this.clearReturnUrl();
+    return value;
+  }
+
+  private storeReturnUrl(returnTo: string): void {
+    if (!returnTo.startsWith('/')) {
+      return;
+    }
+
+    window.sessionStorage.setItem(this.returnUrlStorageKey, returnTo);
+  }
+
+  private clearReturnUrl(): void {
+    window.sessionStorage.removeItem(this.returnUrlStorageKey);
   }
 }

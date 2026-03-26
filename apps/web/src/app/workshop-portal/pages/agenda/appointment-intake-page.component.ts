@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -9,412 +9,22 @@ import {
   VehicleViewModel,
 } from '../../../core/api.service';
 import { AuthService } from '../../../core/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
+import {
+  formatHours,
+  formatVehicleSummary,
+} from '../../../shared/utils/display-formatters';
 
 @Component({
   selector: 'at-appointment-intake-page',
   standalone: true,
   imports: [FormsModule, RouterLink, PageShellComponent],
-  template: `
-    <section class="intake-page">
-      <a class="back-link" routerLink="/workshop/agenda">Back to agenda</a>
-
-      <at-page-shell
-        title="New Intake"
-        description="Create an appointment and immediately open its work order using the existing backend flow."
-      />
-
-      <section class="card form-card">
-        <form class="intake-form" (ngSubmit)="submit()">
-          <section class="stack-section">
-            <div class="section-heading">
-              <div>
-                <p class="preview-label">Customer</p>
-                <strong>Select an existing customer or create one inline.</strong>
-              </div>
-              <div class="mode-switch">
-                <button
-                  type="button"
-                  class="mode-chip"
-                  [class.active]="customerMode === 'select'"
-                  [disabled]="customersLoading || !customers.length"
-                  (click)="setCustomerMode('select')"
-                >
-                  Select
-                </button>
-                <button
-                  type="button"
-                  class="mode-chip"
-                  [class.active]="customerMode === 'create'"
-                  [disabled]="customersLoading"
-                  (click)="setCustomerMode('create')"
-                >
-                  New
-                </button>
-              </div>
-            </div>
-
-            @if (customersLoading) {
-              <div class="status-card neutral">Loading customers...</div>
-            } @else if (customerMode === 'select' && customers.length) {
-              <label class="field">
-                <span>Customer</span>
-                <select
-                  name="clientId"
-                  [(ngModel)]="form.clientId"
-                  required
-                  (ngModelChange)="onCustomerSelectionChange()"
-                >
-                  <option value="" disabled>Select a customer</option>
-                  @for (customer of customers; track customer.id) {
-                    <option [value]="customer.id">{{ customer.name }}</option>
-                  }
-                </select>
-              </label>
-
-              @if (selectedCustomer) {
-                <section class="inline-summary">
-                  <span>{{ selectedCustomer.name }}</span>
-                  <span>{{ selectedCustomer.phone || selectedCustomer.email || 'No contact details yet' }}</span>
-                </section>
-              }
-            } @else {
-              <div class="inline-form-grid">
-                <label class="field">
-                  <span>Customer name</span>
-                  <input
-                    type="text"
-                    name="newCustomerName"
-                    [(ngModel)]="newCustomer.name"
-                    required
-                  />
-                </label>
-
-                <label class="field">
-                  <span>Phone</span>
-                  <input type="tel" name="newCustomerPhone" [(ngModel)]="newCustomer.phone" />
-                </label>
-
-                <label class="field">
-                  <span>Email</span>
-                  <input type="email" name="newCustomerEmail" [(ngModel)]="newCustomer.email" />
-                </label>
-              </div>
-            }
-          </section>
-
-          <section class="stack-section">
-            <div class="section-heading">
-              <div>
-                <p class="preview-label">Vehicle</p>
-                <strong>Choose a customer vehicle or register a minimal one.</strong>
-              </div>
-
-              @if (customerMode === 'select' && form.clientId) {
-                <div class="mode-switch">
-                  <button
-                    type="button"
-                    class="mode-chip"
-                    [class.active]="vehicleMode === 'select'"
-                    [disabled]="vehiclesLoading || !vehicles.length"
-                    (click)="setVehicleMode('select')"
-                  >
-                    Select
-                  </button>
-                  <button
-                    type="button"
-                    class="mode-chip"
-                    [class.active]="vehicleMode === 'create'"
-                    [disabled]="vehiclesLoading"
-                    (click)="setVehicleMode('create')"
-                  >
-                    New
-                  </button>
-                </div>
-              }
-            </div>
-
-            @if (customerMode === 'select' && !form.clientId) {
-              <div class="status-card neutral">Choose a customer first to load vehicles.</div>
-            } @else if (customerMode === 'select' && vehiclesLoading) {
-              <div class="status-card neutral">Loading vehicles...</div>
-            } @else if (customerMode === 'select' && vehicleMode === 'select' && vehicles.length) {
-              <label class="field">
-                <span>Vehicle</span>
-                <select name="vehicleId" [(ngModel)]="form.vehicleId" required>
-                  <option value="" disabled>Select a vehicle</option>
-                  @for (vehicle of vehicles; track vehicle.id) {
-                    <option [value]="vehicle.id">{{ vehicle.plate }}{{ formatVehicleOption(vehicle) }}</option>
-                  }
-                </select>
-              </label>
-
-              @if (selectedVehicle) {
-                <section class="inline-summary">
-                  <span>{{ selectedVehicle.plate }}</span>
-                  <span>{{ describeVehicle(selectedVehicle) }}</span>
-                </section>
-              }
-            } @else {
-              <div class="inline-form-grid">
-                <label class="field">
-                  <span>Plate</span>
-                  <input type="text" name="newVehiclePlate" [(ngModel)]="newVehicle.plate" required />
-                </label>
-
-                <label class="field">
-                  <span>Brand</span>
-                  <input type="text" name="newVehicleBrand" [(ngModel)]="newVehicle.brand" />
-                </label>
-
-                <label class="field">
-                  <span>Model</span>
-                  <input type="text" name="newVehicleModel" [(ngModel)]="newVehicle.model" />
-                </label>
-
-                <label class="field">
-                  <span>Year</span>
-                  <input
-                    type="number"
-                    name="newVehicleYear"
-                    [(ngModel)]="newVehicle.year"
-                    min="1900"
-                    max="2100"
-                  />
-                </label>
-              </div>
-            }
-          </section>
-
-          <label class="field">
-            <span>Service</span>
-            @if (servicesLoading) {
-              <div class="status-card neutral">Loading services...</div>
-            } @else if (!services.length) {
-              <div class="status-card neutral">No services available for this workshop yet.</div>
-            } @else {
-              <select name="serviceId" [(ngModel)]="form.serviceId" required>
-                <option value="" disabled>Select a service</option>
-                @for (service of services; track service.id) {
-                  <option [value]="service.id">{{ service.name }}</option>
-                }
-              </select>
-            }
-          </label>
-
-          @if (selectedService) {
-            <section class="service-preview">
-              <div>
-                <p class="preview-label">Selected service</p>
-                <strong>{{ selectedService.name }}</strong>
-              </div>
-              <div class="preview-grid">
-                <div>
-                  <p class="preview-label">Estimated hours</p>
-                  <span>{{ formatHours(selectedService.estimatedDurationHours) }}</span>
-                </div>
-                <div>
-                  <p class="preview-label">Flow</p>
-                  <span>{{ selectedService.requiresDiagnostic ? 'Requires diagnostic' : 'Direct service' }}</span>
-                </div>
-              </div>
-            </section>
-          }
-
-          <label class="field">
-            <span>Scheduled start</span>
-            <input type="datetime-local" name="scheduledStartAt" [(ngModel)]="form.scheduledStartAt" required />
-          </label>
-
-          @if (error) {
-            <section class="status-card error">{{ error }}</section>
-          }
-
-          @if (successMessage) {
-            <section class="status-card success">{{ successMessage }}</section>
-          }
-
-          <button
-            type="submit"
-            [disabled]="loading || customersLoading || vehiclesLoading || servicesLoading || !canSubmit"
-          >
-            {{ loading ? 'Creating intake...' : 'Create appointment and work order' }}
-          </button>
-        </form>
-      </section>
-    </section>
-  `,
-  styles: [
-    `
-      .intake-page {
-        display: grid;
-        gap: 1rem;
-      }
-
-      .back-link {
-        color: #1d4ed8;
-        text-decoration: none;
-        font-weight: 600;
-      }
-
-      .card {
-        border-radius: 16px;
-        background: #ffffff;
-        border: 1px solid #dbe4f0;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      }
-
-      .form-card {
-        padding: 1rem;
-      }
-
-      .intake-form {
-        display: grid;
-        gap: 0.9rem;
-      }
-
-      .stack-section {
-        display: grid;
-        gap: 0.75rem;
-        padding: 0.9rem;
-        border-radius: 14px;
-        border: 1px solid #dbe4f0;
-        background: #f8fafc;
-      }
-
-      .section-heading {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.75rem;
-        align-items: flex-start;
-      }
-
-      .field {
-        display: grid;
-        gap: 0.35rem;
-      }
-
-      .field span {
-        color: #334155;
-        font-size: 0.85rem;
-        font-weight: 600;
-      }
-
-      input,
-      select,
-      button {
-        font: inherit;
-      }
-
-      input,
-      select {
-        width: 100%;
-        padding: 0.8rem 0.9rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        background: #ffffff;
-        color: #0f172a;
-      }
-
-      .inline-form-grid {
-        display: grid;
-        gap: 0.75rem;
-      }
-
-      .mode-switch {
-        display: inline-flex;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-      }
-
-      .mode-chip {
-        padding: 0.55rem 0.85rem;
-        border-radius: 999px;
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
-        color: #334155;
-        font-weight: 600;
-      }
-
-      .mode-chip.active {
-        border-color: #1d4ed8;
-        color: #1d4ed8;
-        background: #dbeafe;
-      }
-
-      .status-card {
-        padding: 0.9rem 1rem;
-        border-radius: 12px;
-        font-weight: 600;
-      }
-
-      .neutral {
-        color: #334155;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-      }
-
-      .error {
-        color: #991b1b;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-      }
-
-      .success {
-        color: #166534;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-      }
-
-      .service-preview {
-        display: grid;
-        gap: 0.75rem;
-        padding: 0.9rem 1rem;
-        border-radius: 14px;
-        border: 1px solid #dbe4f0;
-        background: #f8fafc;
-      }
-
-      .preview-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
-      }
-
-      .preview-label {
-        margin: 0 0 0.2rem;
-        color: #64748b;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-
-      strong,
-      .preview-grid span {
-        color: #0f172a;
-      }
-
-      .inline-summary {
-        display: grid;
-        gap: 0.2rem;
-        color: #334155;
-        font-size: 0.9rem;
-      }
-
-      button[disabled] {
-        opacity: 0.7;
-      }
-
-      @media (min-width: 768px) {
-        .inline-form-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-    `,
-  ],
+  templateUrl: './appointment-intake-page.component.html',
+  styleUrl: './appointment-intake-page.component.scss',
 })
 export class AppointmentIntakePageComponent implements OnInit {
+  readonly i18n = inject(I18nService);
   form = {
     clientId: '',
     vehicleId: '',
@@ -498,7 +108,7 @@ export class AppointmentIntakePageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to load customers without an authenticated session.';
+        this.error = this.i18n.t('intake.loadingCustomersError');
         return;
       }
 
@@ -521,7 +131,7 @@ export class AppointmentIntakePageComponent implements OnInit {
       await this.loadVehiclesForCustomer(this.form.clientId);
     } catch (error) {
       console.error('Failed to load customers', error);
-      this.error = 'Failed to load customers for intake.';
+      this.error = this.i18n.t('intake.loadingCustomersError');
     } finally {
       this.customersLoading = false;
     }
@@ -533,7 +143,7 @@ export class AppointmentIntakePageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to load services without an authenticated session.';
+        this.error = this.i18n.t('intake.loadingServicesError');
         return;
       }
 
@@ -544,7 +154,7 @@ export class AppointmentIntakePageComponent implements OnInit {
       }
     } catch (error) {
       console.error('Failed to load services', error);
-      this.error = 'Failed to load services for intake.';
+      this.error = this.i18n.t('intake.loadingServicesError');
     } finally {
       this.servicesLoading = false;
     }
@@ -611,7 +221,7 @@ export class AppointmentIntakePageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to load vehicles without an authenticated session.';
+        this.error = this.i18n.t('intake.loadingVehiclesError');
         return;
       }
 
@@ -620,7 +230,7 @@ export class AppointmentIntakePageComponent implements OnInit {
       this.form.vehicleId = this.vehicles.length ? this.vehicles[0].id : '';
     } catch (error) {
       console.error('Failed to load vehicles', error);
-      this.error = 'Failed to load vehicles for the selected customer.';
+      this.error = this.i18n.t('intake.loadingVehiclesError');
       this.vehicles = [];
       this.vehicleMode = 'create';
     } finally {
@@ -630,7 +240,7 @@ export class AppointmentIntakePageComponent implements OnInit {
 
   async submit(): Promise<void> {
     if (!this.canSubmit) {
-      this.error = 'Complete all fields before creating the intake.';
+      this.error = this.i18n.t('intake.completeFields');
       return;
     }
 
@@ -641,7 +251,7 @@ export class AppointmentIntakePageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to create intake without an authenticated session.';
+        this.error = this.i18n.t('intake.createAuthError');
         return;
       }
 
@@ -681,18 +291,18 @@ export class AppointmentIntakePageComponent implements OnInit {
         appointment.id,
       );
 
-      this.successMessage = 'Intake created. Opening work order...';
+      this.successMessage = this.i18n.t('intake.success');
       await this.router.navigate(['/workshop/work-orders', workOrder.id]);
     } catch (error) {
       console.error('Failed to create intake', error);
-      this.error = 'Failed to create appointment and work order.';
+      this.error = this.i18n.t('intake.createError');
     } finally {
       this.loading = false;
     }
   }
 
   formatHours(value: number): string {
-    return `${value}h`;
+    return formatHours(value);
   }
 
   formatVehicleOption(vehicle: VehicleViewModel): string {
@@ -701,9 +311,7 @@ export class AppointmentIntakePageComponent implements OnInit {
   }
 
   describeVehicle(vehicle: VehicleViewModel): string {
-    return [vehicle.brand, vehicle.model, vehicle.year ? `${vehicle.year}` : null]
-      .filter((value): value is string => Boolean(value))
-      .join(' ');
+    return formatVehicleSummary(vehicle);
   }
 
   private optionalValue(value: string): string | undefined {

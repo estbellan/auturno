@@ -8,7 +8,9 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { QuotesModule } from './quotes/quotes.module';
+import { ServiceRequestsModule } from './service-requests/service-requests.module';
 import { ServicesModule } from './services/services.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
@@ -32,11 +34,13 @@ import { WorkshopsModule } from './workshops/workshops.module';
     UsersModule,
     WorkshopsModule,
     ServicesModule,
+    ServiceRequestsModule,
     CustomersModule,
     VehiclesModule,
     AppointmentsModule,
     WorkOrdersModule,
     DiagnosticsModule,
+    NotificationsModule,
     QuotesModule,
   ],
   controllers: [AppController],

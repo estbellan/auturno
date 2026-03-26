@@ -1,0 +1,227 @@
+<div class="agenda-page">
+  <at-page-shell
+    icon="calendar_today"
+    [title]="i18n.t('agenda.title')"
+    [description]="i18n.t('agenda.description')"
+  />
+
+  <div class="page-body">
+  <at-context-hint
+    hintKey="agenda-flow"
+    icon="tips_and_updates"
+    [title]="i18n.t('hint.agenda.title')"
+    [text]="i18n.t('hint.agenda.text')"
+  />
+
+  <section class="card action-card">
+    <div class="action-copy">
+      <h2>{{ i18n.t('agenda.newIntake') }}</h2>
+      <p>{{ i18n.t('agenda.newIntakeCopy') }}</p>
+    </div>
+    <a class="action-link" routerLink="/workshop/agenda/intake">{{ i18n.t('agenda.startIntake') }}</a>
+  </section>
+
+  <section class="card list-card">
+    <div class="section-header">
+      <div>
+        <h2>{{ i18n.t('agenda.requests.title') }}</h2>
+        <p>{{ i18n.t('agenda.requests.description') }}</p>
+      </div>
+    </div>
+
+    @if (serviceRequestError) {
+      <section class="status-card error">{{ serviceRequestError }}</section>
+    }
+
+    @if (!serviceRequestItems.length) {
+      <section class="status-card neutral">{{ i18n.t('agenda.requests.empty') }}</section>
+    } @else {
+      <div class="agenda-list">
+        @for (item of serviceRequestItems; track item.request.id) {
+          <article class="agenda-item">
+            <div class="agenda-main">
+              <div class="headline-row">
+                <div>
+                  <p class="eyebrow">{{ i18n.t('agenda.requests.label') }}</p>
+                  <h3>{{ item.customerName }}</h3>
+                </div>
+
+                <span class="status-badge appointment">{{ formatServiceRequestStatus(item.request.status) }}</span>
+              </div>
+
+              <div class="detail-grid">
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.vehicle') }}</p>
+                  <span>{{ item.vehicleLabel }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.service') }}</p>
+                  <span>{{ item.serviceLabel }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.preferred') }}</p>
+                  <span>{{ formatPreferredRequestDate(item.request) }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.created') }}</p>
+                  <span>{{ item.request.createdAt | date: 'EEE d MMM, HH:mm' }}</span>
+                </div>
+              </div>
+
+              @if (item.request.comment) {
+                <div class="reference-grid">
+                  <p>{{ item.request.comment }}</p>
+                </div>
+              }
+            </div>
+
+            <div class="agenda-actions request-actions">
+              @if (item.request.status === 'pending') {
+                <button
+                  type="button"
+                  class="secondary-link action-button"
+                  [disabled]="updatingServiceRequestId === item.request.id"
+                  (click)="updateServiceRequestStatus(item.request.id, 'reviewed')"
+                >
+                  {{ i18n.t('agenda.requests.review') }}
+                </button>
+              }
+
+              @if (item.request.status === 'pending' || item.request.status === 'reviewed') {
+                <button
+                  type="button"
+                  class="secondary-link action-button"
+                  [disabled]="updatingServiceRequestId === item.request.id"
+                  (click)="updateServiceRequestStatus(item.request.id, 'accepted')"
+                >
+                  {{ i18n.t('agenda.requests.accept') }}
+                </button>
+
+                <button
+                  type="button"
+                  class="secondary-link action-button"
+                  [disabled]="updatingServiceRequestId === item.request.id"
+                  (click)="updateServiceRequestStatus(item.request.id, 'rejected')"
+                >
+                  {{ i18n.t('agenda.requests.reject') }}
+                </button>
+              }
+
+              @if (item.request.status === 'accepted') {
+                <button
+                  type="button"
+                  class="primary-button"
+                  [disabled]="convertingServiceRequestId === item.request.id"
+                  (click)="convertServiceRequest(item.request)"
+                >
+                  {{
+                    convertingServiceRequestId === item.request.id
+                      ? i18n.t('agenda.requests.converting')
+                      : i18n.t('agenda.requests.convert')
+                  }}
+                </button>
+              }
+
+              @if (item.request.status === 'converted' && item.request.appointmentId) {
+                <span class="secondary-link static-pill">
+                  {{ i18n.t('agenda.requests.converted') }}
+                </span>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="card list-card">
+    <div class="section-header">
+      <div>
+        <h2>{{ i18n.t('agenda.upcomingWork') }}</h2>
+        <p>{{ i18n.t('agenda.upcomingWorkCopy') }}</p>
+      </div>
+    </div>
+
+    @if (loading) {
+      <section class="status-card neutral">{{ i18n.t('agenda.loading') }}</section>
+    } @else if (error) {
+      <section class="status-card error">{{ error }}</section>
+    } @else if (!agendaItems.length) {
+      <section class="status-card neutral">{{ i18n.t('agenda.empty') }}</section>
+    } @else {
+      <div class="agenda-list">
+        @for (item of agendaItems; track item.appointment.id) {
+          <article class="agenda-item">
+            <div class="agenda-main">
+              <div class="headline-row">
+                <div>
+                  <p class="eyebrow">{{ i18n.t('agenda.scheduled') }}</p>
+                  <h3>{{ item.customerName }}</h3>
+                </div>
+
+                @if (item.workOrder) {
+                  <span class="status-badge work-order">{{ formatWorkOrderStatus(item.workOrder.status) }}</span>
+                } @else {
+                  <span class="status-badge appointment">{{ i18n.t('agenda.appointmentOnly') }}</span>
+                }
+              </div>
+
+              <div class="detail-grid">
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.vehicle') }}</p>
+                  <span>{{ item.vehicleLabel }}</span>
+                  <small>{{ item.vehicleNote }}</small>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.service') }}</p>
+                  <span>{{ item.serviceLabel }}</span>
+                  <small>{{ item.serviceNote }}</small>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('agenda.start') }}</p>
+                  <span>{{ item.appointment.scheduledStartAt | date: 'EEE d MMM, HH:mm' }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('agenda.plannedHours') }}</p>
+                  <span>{{ formatHours(item.appointment.estimatedDurationHours) }}</span>
+                  <small>{{ item.customerNote }}</small>
+                </div>
+              </div>
+
+              <div class="reference-grid">
+                <p>{{ i18n.t('agenda.clientRef') }}: {{ formatReference(item.appointment.clientId) }}</p>
+                <p>{{ i18n.t('agenda.vehicleRef') }}: {{ formatReference(item.appointment.vehicleId) }}</p>
+                <p>{{ i18n.t('agenda.serviceRef') }}: {{ formatReference(item.appointment.serviceId) }}</p>
+              </div>
+            </div>
+
+            <div class="agenda-actions">
+              @if (item.workOrder) {
+                <a
+                  class="secondary-link"
+                  [routerLink]="['/workshop/work-orders', item.workOrder.id]"
+                >
+                  {{ i18n.t('agenda.openWorkOrder') }}
+                </a>
+              } @else {
+                <button
+                  type="button"
+                  class="primary-button"
+                  [disabled]="openingAppointmentId === item.appointment.id"
+                  (click)="openWorkOrder(item.appointment.id)"
+                >
+                  {{
+                    openingAppointmentId === item.appointment.id
+                      ? i18n.t('agenda.openingWorkOrder')
+                      : i18n.t('agenda.createAndOpenWorkOrder')
+                  }}
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+  </div>
+</div>

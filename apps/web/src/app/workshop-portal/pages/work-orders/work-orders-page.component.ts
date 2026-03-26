@@ -1,342 +1,43 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { ApiService, WorkOrderViewModel } from '../../../core/api.service';
+import {
+  ApiService,
+  CustomerViewModel,
+  ServiceViewModel,
+  VehicleViewModel,
+  WorkOrderViewModel,
+} from '../../../core/api.service';
 import { AuthService } from '../../../core/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { ContextHintComponent } from '../../../shared/components/context-hint/context-hint.component';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
+import {
+  formatDateTime,
+  formatVehicleLabel,
+} from '../../../shared/utils/display-formatters';
 
 type WorkOrderStatus = WorkOrderViewModel['status'];
 type WorkOrderType = WorkOrderViewModel['type'];
 
+interface WorkOrderListItemViewModel {
+  workOrder: WorkOrderViewModel;
+  customerName: string;
+  vehicleLabel: string;
+  serviceName: string;
+}
+
 @Component({
   selector: 'at-work-orders-page',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageShellComponent],
-  template: `
-    <section class="work-orders-page">
-      <at-page-shell
-        title="Work Orders"
-        description="Operational board for direct and diagnostic work orders with backend-managed status transitions."
-      />
-
-      <section class="card filters-card">
-        <div class="filters-header">
-          <div>
-            <h2>Board</h2>
-            <p>{{ visibleCount }} visible of {{ totalCount }} total</p>
-          </div>
-          <button type="button" [disabled]="loading" (click)="loadWorkOrders()">
-            {{ loading ? 'Refreshing...' : 'Refresh' }}
-          </button>
-        </div>
-
-        <div class="filters-grid">
-          <label class="field">
-            <span>Search</span>
-            <input
-              type="text"
-              name="search"
-              [(ngModel)]="searchTerm"
-              placeholder="Client or vehicle"
-            />
-          </label>
-
-          <label class="field">
-            <span>Status</span>
-            <select name="status" [(ngModel)]="selectedStatus">
-              @for (option of statusOptions; track option.value) {
-                <option [ngValue]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </label>
-
-          <label class="field">
-            <span>Type</span>
-            <select name="type" [(ngModel)]="selectedType">
-              @for (option of typeOptions; track option.value) {
-                <option [ngValue]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </label>
-        </div>
-
-        @if (hasActiveFilters) {
-          <button type="button" class="secondary clear-button" (click)="clearFilters()">
-            Clear filters
-          </button>
-        }
-      </section>
-
-      @if (loading) {
-        <section class="card status-card">Loading work orders...</section>
-      } @else if (error) {
-        <section class="card status-card error">{{ error }}</section>
-      } @else if (!workOrders.length) {
-        <section class="card status-card">
-          No work orders found for this workshop yet.
-        </section>
-      } @else if (!filteredWorkOrders.length) {
-        <section class="card status-card">
-          No work orders match the current filters.
-        </section>
-      } @else {
-        <section class="work-order-list">
-          @for (workOrder of filteredWorkOrders; track workOrder.id) {
-            <a class="work-order-card" [routerLink]="['/workshop/work-orders', workOrder.id]">
-              <div class="card-topline">
-                <span class="type-chip" [class.diagnostic]="workOrder.type === 'diagnostic'">
-                  {{ workOrder.type }}
-                </span>
-                <span class="status-chip" [class]="statusClassName(workOrder.status)">
-                  {{ formatStatus(workOrder.status) }}
-                </span>
-              </div>
-
-              <div class="identity-block">
-                <div>
-                  <p class="eyebrow">Client</p>
-                  <strong>{{ workOrder.clientId }}</strong>
-                </div>
-                <div>
-                  <p class="eyebrow">Vehicle</p>
-                  <strong>{{ workOrder.vehicleId }}</strong>
-                </div>
-              </div>
-
-              <dl class="card-grid">
-                <div>
-                  <dt>Diagnostic ETA</dt>
-                  <dd>{{ formatDate(workOrder.promisedDiagnosticAt) }}</dd>
-                </div>
-                <div>
-                  <dt>Delivery ETA</dt>
-                  <dd>{{ formatDate(workOrder.promisedDeliveryAt) }}</dd>
-                </div>
-              </dl>
-            </a>
-          }
-        </section>
-      }
-    </section>
-  `,
-  styles: [
-    `
-      .work-orders-page {
-        display: grid;
-        gap: 1rem;
-      }
-
-      .card,
-      .work-order-card {
-        border-radius: 16px;
-        background: #ffffff;
-        border: 1px solid #dbe4f0;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      }
-
-      .filters-card,
-      .status-card {
-        padding: 1rem;
-      }
-
-      .filters-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-      }
-
-      .filters-header h2,
-      .filters-header p,
-      .eyebrow,
-      dt,
-      dd {
-        margin: 0;
-      }
-
-      .filters-header h2 {
-        color: #0f172a;
-        font-size: 1rem;
-      }
-
-      .filters-header p {
-        color: #64748b;
-        font-size: 0.85rem;
-      }
-
-      .filters-grid {
-        display: grid;
-        gap: 0.85rem;
-      }
-
-      .field {
-        display: grid;
-        gap: 0.35rem;
-      }
-
-      .field span {
-        color: #334155;
-        font-size: 0.85rem;
-        font-weight: 600;
-      }
-
-      input,
-      select,
-      button {
-        font: inherit;
-      }
-
-      input,
-      select {
-        width: 100%;
-        padding: 0.8rem 0.9rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        background: #ffffff;
-        color: #0f172a;
-      }
-
-      .clear-button {
-        margin-top: 0.85rem;
-      }
-
-      .error {
-        color: #991b1b;
-        background: #fef2f2;
-        border-color: #fecaca;
-      }
-
-      .work-order-list {
-        display: grid;
-        gap: 0.75rem;
-      }
-
-      .work-order-card {
-        display: grid;
-        gap: 0.9rem;
-        padding: 1rem;
-        text-decoration: none;
-        color: inherit;
-      }
-
-      .card-topline,
-      .identity-block {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-      }
-
-      .type-chip,
-      .status-chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.38rem 0.72rem;
-        border-radius: 999px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: capitalize;
-      }
-
-      .type-chip {
-        background: #dbeafe;
-        color: #1d4ed8;
-      }
-
-      .type-chip.diagnostic {
-        background: #fef3c7;
-        color: #b45309;
-      }
-
-      .status-chip {
-        background: #e2e8f0;
-        color: #334155;
-      }
-
-      .status-scheduled,
-      .status-reception {
-        background: #e0f2fe;
-        color: #0369a1;
-      }
-
-      .status-in-diagnosis,
-      .status-in-operation {
-        background: #dbeafe;
-        color: #1d4ed8;
-      }
-
-      .status-quote-sent,
-      .status-awaiting-approval {
-        background: #fef3c7;
-        color: #b45309;
-      }
-
-      .status-ready {
-        background: #dcfce7;
-        color: #15803d;
-      }
-
-      .status-closed,
-      .status-picked-up {
-        background: #ede9fe;
-        color: #6d28d9;
-      }
-
-      .identity-block strong {
-        color: #0f172a;
-        font-size: 1rem;
-      }
-
-      .eyebrow {
-        color: #64748b;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 0.2rem;
-      }
-
-      .card-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 0.8rem;
-        margin: 0;
-      }
-
-      dt {
-        color: #64748b;
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-bottom: 0.2rem;
-      }
-
-      dd {
-        color: #0f172a;
-        font-weight: 600;
-      }
-
-      .secondary {
-        background: #334155;
-      }
-
-      button[disabled] {
-        opacity: 0.7;
-      }
-
-      @media (min-width: 768px) {
-        .filters-grid,
-        .card-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-    `,
-  ],
+  imports: [FormsModule, RouterLink, PageShellComponent, ContextHintComponent],
+  templateUrl: './work-orders-page.component.html',
+  styleUrl: './work-orders-page.component.scss',
 })
 export class WorkOrdersPageComponent implements OnInit {
-  workOrders: WorkOrderViewModel[] = [];
+  readonly i18n = inject(I18nService);
+  workOrderItems: WorkOrderListItemViewModel[] = [];
   searchTerm = '';
   selectedStatus: WorkOrderStatus | 'all' = 'all';
   selectedType: WorkOrderType | 'all' = 'all';
@@ -344,22 +45,22 @@ export class WorkOrdersPageComponent implements OnInit {
   error = '';
 
   readonly statusOptions: Array<{ value: WorkOrderStatus | 'all'; label: string }> = [
-    { value: 'all', label: 'All statuses' },
-    { value: 'scheduled', label: 'Scheduled' },
-    { value: 'reception', label: 'Reception' },
-    { value: 'in_diagnosis', label: 'In diagnosis' },
-    { value: 'quote_sent', label: 'Quote sent' },
-    { value: 'awaiting_approval', label: 'Awaiting approval' },
-    { value: 'in_operation', label: 'In operation' },
-    { value: 'ready', label: 'Ready' },
-    { value: 'closed', label: 'Closed' },
-    { value: 'picked_up', label: 'Picked up' },
+    { value: 'all', label: '' },
+    { value: 'scheduled', label: '' },
+    { value: 'reception', label: '' },
+    { value: 'in_diagnosis', label: '' },
+    { value: 'quote_sent', label: '' },
+    { value: 'awaiting_approval', label: '' },
+    { value: 'in_operation', label: '' },
+    { value: 'ready', label: '' },
+    { value: 'closed', label: '' },
+    { value: 'picked_up', label: '' },
   ];
 
   readonly typeOptions: Array<{ value: WorkOrderType | 'all'; label: string }> = [
-    { value: 'all', label: 'All types' },
-    { value: 'direct', label: 'Direct' },
-    { value: 'diagnostic', label: 'Diagnostic' },
+    { value: 'all', label: '' },
+    { value: 'direct', label: '' },
+    { value: 'diagnostic', label: '' },
   ];
 
   constructor(
@@ -368,19 +69,20 @@ export class WorkOrdersPageComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    this.initializeOptionLabels();
     await this.loadWorkOrders();
   }
 
-  get filteredWorkOrders(): WorkOrderViewModel[] {
-    return this.workOrders.filter((workOrder) => this.matchesFilters(workOrder));
+  get filteredWorkOrderItems(): WorkOrderListItemViewModel[] {
+    return this.workOrderItems.filter((item) => this.matchesFilters(item));
   }
 
   get totalCount(): number {
-    return this.workOrders.length;
+    return this.workOrderItems.length;
   }
 
   get visibleCount(): number {
-    return this.filteredWorkOrders.length;
+    return this.filteredWorkOrderItems.length;
   }
 
   get hasActiveFilters(): boolean {
@@ -398,14 +100,26 @@ export class WorkOrdersPageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to load work orders without an authenticated session.';
+        this.error = this.i18n.t('workOrders.authError');
         return;
       }
 
-      this.workOrders = await this.apiService.listWorkOrders(token);
+      const [workOrders, customers, vehicles, services] = await Promise.all([
+        this.apiService.listWorkOrders(token),
+        this.apiService.listCustomers(token),
+        this.apiService.listVehicles(token),
+        this.apiService.listServices(token),
+      ]);
+
+      this.workOrderItems = this.buildWorkOrderItems(
+        workOrders,
+        customers,
+        vehicles,
+        services,
+      );
     } catch (error) {
       console.error('Failed to load work orders', error);
-      this.error = 'Failed to load work orders from the backend.';
+      this.error = this.i18n.t('workOrders.error');
     } finally {
       this.loading = false;
     }
@@ -418,38 +132,58 @@ export class WorkOrdersPageComponent implements OnInit {
   }
 
   formatStatus(status: string): string {
-    return status.replace(/_/g, ' ');
+    return this.i18n.t(`workOrders.status.${status}`);
   }
 
   formatDate(value: string | null): string {
-    if (!value) {
-      return 'Not set';
-    }
-
-    return new Date(value).toLocaleString();
+    return formatDateTime(value);
   }
 
   statusClassName(status: WorkOrderStatus): string {
     return `status-${status.replace(/_/g, '-')}`;
   }
 
-  private matchesFilters(workOrder: WorkOrderViewModel): boolean {
+  private buildWorkOrderItems(
+    workOrders: WorkOrderViewModel[],
+    customers: CustomerViewModel[],
+    vehicles: VehicleViewModel[],
+    services: ServiceViewModel[],
+  ): WorkOrderListItemViewModel[] {
+    const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
+    const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
+    const serviceMap = new Map(services.map((service) => [service.id, service]));
+
+    return workOrders.map((workOrder) => ({
+      workOrder,
+      customerName:
+        customerMap.get(workOrder.clientId)?.name ?? workOrder.clientId,
+      vehicleLabel: formatVehicleLabel(
+        vehicleMap.get(workOrder.vehicleId),
+        workOrder.vehicleId,
+      ),
+      serviceName:
+        serviceMap.get(workOrder.serviceId)?.name ?? workOrder.serviceId,
+    }));
+  }
+
+  private matchesFilters(item: WorkOrderListItemViewModel): boolean {
     return (
-      this.matchesSearch(workOrder) &&
-      this.matchesStatus(workOrder) &&
-      this.matchesType(workOrder)
+      this.matchesSearch(item) &&
+      this.matchesStatus(item.workOrder) &&
+      this.matchesType(item.workOrder)
     );
   }
 
-  private matchesSearch(workOrder: WorkOrderViewModel): boolean {
+  private matchesSearch(item: WorkOrderListItemViewModel): boolean {
     const query = this.searchTerm.trim().toLowerCase();
     if (!query) {
       return true;
     }
 
     return (
-      workOrder.clientId.toLowerCase().includes(query) ||
-      workOrder.vehicleId.toLowerCase().includes(query)
+      item.customerName.toLowerCase().includes(query) ||
+      item.vehicleLabel.toLowerCase().includes(query) ||
+      item.serviceName.toLowerCase().includes(query)
     );
   }
 
@@ -459,5 +193,17 @@ export class WorkOrdersPageComponent implements OnInit {
 
   private matchesType(workOrder: WorkOrderViewModel): boolean {
     return this.selectedType === 'all' || workOrder.type === this.selectedType;
+  }
+
+  private initializeOptionLabels(): void {
+    this.statusOptions[0].label = this.i18n.t('workOrders.status.all');
+    this.typeOptions[0].label = this.i18n.t('workOrders.type.all');
+
+    for (const option of this.statusOptions.slice(1)) {
+      option.label = this.i18n.t(`workOrders.status.${option.value}`);
+    }
+
+    this.typeOptions[1].label = this.i18n.t('workOrders.type.direct');
+    this.typeOptions[2].label = this.i18n.t('workOrders.type.diagnostic');
   }
 }

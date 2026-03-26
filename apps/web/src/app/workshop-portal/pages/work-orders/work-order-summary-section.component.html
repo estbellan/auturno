@@ -1,0 +1,30 @@
+<section class="card detail-card">
+  <div class="header-row">
+    <div>
+      <p class="eyebrow">{{ i18n.t('workOrders.summary.eyebrow', { value: workOrder.type }) }}</p>
+      <h2>{{ formatStatus(workOrder.status) }}</h2>
+    </div>
+    <span class="status-pill">{{ workOrder.id }}</span>
+  </div>
+
+  <dl class="detail-grid">
+    <div><dt>{{ i18n.t('workOrders.summary.customer') }}</dt><dd>{{ customerName }}</dd></div>
+    <div><dt>{{ i18n.t('workOrders.summary.vehicle') }}</dt><dd>{{ vehicleLabel }}</dd></div>
+    <div><dt>{{ i18n.t('workOrders.summary.service') }}</dt><dd>{{ serviceName }}</dd></div>
+    <div><dt>{{ i18n.t('workOrders.summary.diagnosticEta') }}</dt><dd>{{ formatDate(workOrder.promisedDiagnosticAt) }}</dd></div>
+    <div><dt>{{ i18n.t('workOrders.summary.deliveryEta') }}</dt><dd>{{ formatDate(workOrder.promisedDeliveryAt) }}</dd></div>
+  </dl>
+</section>
+
+@if (actions.length) {
+  <section class="card detail-card">
+    <h3>{{ i18n.t('workOrders.detail.actions') }}</h3>
+    <div class="action-grid">
+      @for (action of actions; track action.id) {
+        <button type="button" [disabled]="actionLoading === action.id" (click)="actionSelected.emit(action.id)">
+          {{ actionLoading === action.id ? i18n.t('workOrders.summary.working') : action.label }}
+        </button>
+      }
+    </div>
+  </section>
+}

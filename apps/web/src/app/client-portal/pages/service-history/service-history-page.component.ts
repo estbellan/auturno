@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 
 @Component({
   selector: 'at-service-history-page',
   standalone: true,
   imports: [PageShellComponent],
-  template: '<at-page-shell title="Service History" description="Historical completed orders and diagnostics context surfaced from API records." />'
+  templateUrl: './service-history-page.component.html',
 })
-export class ServiceHistoryPageComponent {}
+export class ServiceHistoryPageComponent {
+  readonly i18n = inject(I18nService);
+}

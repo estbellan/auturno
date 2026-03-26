@@ -1,0 +1,20 @@
+
+    @if (visible()) {
+      <div class="hint-bar" role="note">
+        <span class="ms hint-bar__icon">{{ icon }}</span>
+        <div class="hint-bar__body">
+          @if (title) {
+            <span class="hint-bar__title">{{ title }}</span>
+          }
+          <span class="hint-bar__text">{{ text }}</span>
+        </div>
+        <button
+          type="button"
+          class="hint-bar__close btn-icon"
+          aria-label="Dismiss hint"
+          (click)="dismiss()"
+        >
+          <span class="ms">close</span>
+        </button>
+      </div>
+    }

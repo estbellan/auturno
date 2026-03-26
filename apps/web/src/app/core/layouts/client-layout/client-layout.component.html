@@ -1,0 +1,88 @@
+<at-client-welcome-splash />
+
+<div class="cl-shell portal-client">
+
+  <!-- ── M3 Navigation Bar (mobile bottom) / Rail (desktop left) ── -->
+  <nav class="cl-nav" aria-label="Navegación principal">
+    @for (tab of tabs; track tab.path) {
+      <a
+        class="cl-nav__dest"
+        [routerLink]="tab.path"
+        routerLinkActive="cl-nav__dest--active"
+        [routerLinkActiveOptions]="{ exact: tab.exact }">
+        <span class="cl-nav__indicator">
+          <span class="ms">{{ tab.icon }}</span>
+        </span>
+        <span class="cl-nav__label">{{ i18n.t(tab.labelKey) }}</span>
+      </a>
+    }
+  </nav>
+
+  <!-- ── Content: top-bar + main ── -->
+  <div class="cl-body">
+
+    <header class="cl-top-bar">
+      <div class="cl-top-bar__brand">
+        <span class="ms cl-brand-icon">garage</span>
+        <span class="cl-brand-name">AUTURNO</span>
+      </div>
+      @if (currentUser(); as user) {
+        <button type="button" class="cl-avatar" [title]="user.name" (click)="profileOpen.set(true)">
+          {{ initials(user.name) }}
+        </button>
+      }
+    </header>
+
+    <main class="cl-main">
+      <router-outlet />
+    </main>
+
+  </div>
+</div>
+
+<!-- ── Profile panel (slides in from right) ── -->
+@if (profileOpen()) {
+  <div class="cl-profile-scrim" aria-hidden="true" (click)="profileOpen.set(false)"></div>
+}
+<aside class="cl-profile" [class.cl-profile--open]="profileOpen()" aria-label="Perfil">
+  <div class="cl-profile__header">
+    <h3 class="cl-profile__title">{{ i18n.t('profile.title') }}</h3>
+    <button type="button" class="btn-icon" (click)="profileOpen.set(false)" [attr.aria-label]="'Cerrar'">
+      <span class="ms">close</span>
+    </button>
+  </div>
+
+  @if (currentUser(); as user) {
+    <div class="cl-profile__user">
+      <div class="cl-avatar cl-avatar--lg">{{ initials(user.name) }}</div>
+      <div class="cl-profile__user-text">
+        <p class="cl-profile__user-name">{{ user.name }}</p>
+        <p class="cl-profile__user-email">{{ user.email }}</p>
+      </div>
+    </div>
+  }
+
+  <hr class="cl-profile__divider" />
+
+  <div class="cl-profile__controls">
+    <at-language-switcher />
+    <at-theme-toggle />
+  </div>
+
+  <hr class="cl-profile__divider" />
+
+  <div class="cl-profile__actions">
+    <button type="button" class="btn-tonal cl-profile__btn" (click)="changePassword()">
+      <span class="ms ms--sm">lock_reset</span>
+      {{ i18n.t('profile.changePassword') }}
+    </button>
+    <p class="cl-profile__hint">{{ i18n.t('profile.changePasswordHint') }}</p>
+  </div>
+
+  <div class="cl-profile__footer">
+    <button type="button" class="btn-error cl-profile__btn" (click)="logout()">
+      <span class="ms ms--sm">logout</span>
+      {{ i18n.t('common.logout') }}
+    </button>
+  </div>
+</aside>

@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 
 @Component({
   selector: 'at-metrics-page',
   standalone: true,
   imports: [PageShellComponent],
-  template: '<at-page-shell title="Metrics (Placeholder)" description="Reserved UI entry for silent metrics visibility without advanced V1 dashboard logic." />'
+  templateUrl: './metrics-page.component.html',
 })
-export class MetricsPageComponent {}
+export class MetricsPageComponent {
+  readonly i18n = inject(I18nService);
+}

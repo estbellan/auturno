@@ -1,15 +1,26 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
   ApiService,
+  AuditHistoryEventViewModel,
+  CustomerViewModel,
   DiagnosticViewModel,
+  NotificationOutboxItemViewModel,
   QuoteViewModel,
+  ServiceViewModel,
+  VehicleViewModel,
   WorkOrderViewModel,
 } from '../../../core/api.service';
 import { AuthService } from '../../../core/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
+import {
+  formatDateTime,
+  formatVehicleLabel,
+} from '../../../shared/utils/display-formatters';
 import { DiagnosticSectionComponent } from './diagnostic-section.component';
 import { QuoteSectionComponent } from './quote-section.component';
 import { WorkOrderSummarySectionComponent } from './work-order-summary-section.component';
@@ -18,79 +29,39 @@ import { WorkOrderSummarySectionComponent } from './work-order-summary-section.c
   selector: 'at-work-order-detail-page',
   standalone: true,
   imports: [
+    FormsModule,
     RouterLink,
     PageShellComponent,
     WorkOrderSummarySectionComponent,
     DiagnosticSectionComponent,
     QuoteSectionComponent,
   ],
-  template: `
-    <section class="detail-page">
-      <a class="back-link" routerLink="/workshop/work-orders">Back to work orders</a>
-      <at-page-shell
-        title="Work Order Detail"
-        description="Review the current backend-driven work order state, diagnostics, quotes, and trigger allowed actions."
-      />
-
-      @if (loading) {
-        <section class="card status-card">Loading work order...</section>
-      } @else if (error) {
-        <section class="card status-card error">{{ error }}</section>
-      } @else if (workOrder) {
-        <at-work-order-summary-section
-          [workOrder]="workOrder"
-          [actions]="availableActions"
-          [actionLoading]="actionLoading"
-          (actionSelected)="runAction($event)"
-        />
-
-        @if (workOrder.type === 'diagnostic') {
-          <at-diagnostic-section
-            [diagnostic]="diagnostic"
-            [actions]="diagnosticActions"
-            [actionLoading]="actionLoading"
-            [form]="diagnosticForm"
-            [canCreateDiagnostic]="canCreateDiagnostic"
-            (actionSelected)="runAction($event)"
-            (createDraft)="createDiagnosticDraft()"
-            (addRecommendedService)="addRecommendedService()"
-            (removeRecommendedService)="removeRecommendedService($event)"
-          />
-
-          <at-quote-section
-            [quote]="quote"
-            [actions]="quoteActions"
-            [actionLoading]="actionLoading"
-            [showForm]="showQuoteForm"
-            [canCreateQuote]="canCreateQuote"
-            [draftTotal]="quoteDraftTotal"
-            [form]="quoteForm"
-            (actionSelected)="runAction($event)"
-            (createDraft)="createQuoteDraft()"
-            (addItem)="addQuoteItem()"
-            (removeItem)="removeQuoteItem($event)"
-          />
-        }
-      }
-    </section>
-  `,
-  styles: [
-    `
-      .detail-page { display: grid; gap: 1rem; }
-      .back-link { color: #1d4ed8; text-decoration: none; font-weight: 600; }
-      .card { border-radius: 16px; background: #fff; border: 1px solid #dbe4f0; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
-      .status-card { padding: 1rem; }
-      .error { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
-    `,
-  ],
+  templateUrl: './work-order-detail-page.component.html',
+  styleUrl: './work-order-detail-page.component.scss',
 })
 export class WorkOrderDetailPageComponent implements OnInit {
+  readonly i18n = inject(I18nService);
   workOrder: WorkOrderViewModel | null = null;
   diagnostic: DiagnosticViewModel | null = null;
   quote: QuoteViewModel | null = null;
+  history: AuditHistoryEventViewModel[] = [];
+  notifications: NotificationOutboxItemViewModel[] = [];
+  customers: CustomerViewModel[] = [];
+  vehicles: VehicleViewModel[] = [];
+  services: ServiceViewModel[] = [];
   loading = true;
   error = '';
   actionLoading = '';
+  promiseSubmitting = false;
+  promiseError = '';
+  promiseSuccessMessage = '';
+  acknowledgingNotificationId = '';
+  notificationError = '';
+  promiseForm = {
+    promisedDiagnosticAt: '',
+    promisedDeliveryAt: '',
+    reason: '',
+  };
   diagnosticForm = {
     summary: '',
     notes: '',
@@ -111,14 +82,37 @@ export class WorkOrderDetailPageComponent implements OnInit {
     await this.loadWorkOrder();
   }
 
+  get customerName(): string {
+    const workOrder = this.workOrder;
+    if (!workOrder) return '';
+    return this.customers.find((customer) => customer.id === workOrder.clientId)?.name
+      ?? this.i18n.t('agenda.customerMissing');
+  }
+
+  get vehicleLabel(): string {
+    const workOrder = this.workOrder;
+    if (!workOrder) return '';
+    return this.describeVehicle(
+      this.vehicles.find((vehicle) => vehicle.id === workOrder.vehicleId),
+      workOrder.vehicleId,
+    );
+  }
+
+  get serviceName(): string {
+    const workOrder = this.workOrder;
+    if (!workOrder) return '';
+    return this.services.find((service) => service.id === workOrder.serviceId)?.name
+      ?? this.i18n.t('agenda.serviceMissing');
+  }
+
   get availableActions(): Array<{ id: ActionId; label: string }> {
     if (!this.workOrder) return [];
 
     const actions: Record<string, Array<{ id: ActionId; label: string }>> = {
-      scheduled: [{ id: 'start-operation', label: 'Start operation' }],
-      in_operation: [{ id: 'mark-ready', label: 'Mark ready' }],
-      ready: [{ id: 'close', label: 'Close work order' }],
-      closed: [{ id: 'pick-up', label: 'Mark picked up' }],
+      scheduled: [{ id: 'start-operation', label: this.i18n.t('workOrders.detail.startOperation') }],
+      in_operation: [{ id: 'mark-ready', label: this.i18n.t('workOrders.detail.markReady') }],
+      ready: [{ id: 'close', label: this.i18n.t('workOrders.detail.close') }],
+      closed: [{ id: 'pick-up', label: this.i18n.t('workOrders.detail.pickUp') }],
     };
 
     return actions[this.workOrder.status] ?? [];
@@ -126,19 +120,19 @@ export class WorkOrderDetailPageComponent implements OnInit {
 
   get diagnosticActions(): Array<{ id: ActionId; label: string }> {
     return this.diagnostic?.status === 'draft'
-      ? [{ id: 'complete-diagnostic', label: 'Complete diagnostic' }]
+      ? [{ id: 'complete-diagnostic', label: this.i18n.t('workOrders.detail.diagnosticComplete') }]
       : [];
   }
 
   get quoteActions(): Array<{ id: ActionId; label: string; tone?: 'secondary' }> {
     if (this.quote?.status === 'draft') {
-      return [{ id: 'send-quote', label: 'Send quote' }];
+      return [{ id: 'send-quote', label: this.i18n.t('workOrders.detail.quoteSend') }];
     }
 
     if (this.quote?.status === 'sent') {
       return [
-        { id: 'approve-quote', label: 'Approve quote' },
-        { id: 'reject-quote', label: 'Reject quote', tone: 'secondary' },
+        { id: 'approve-quote', label: this.i18n.t('workOrders.detail.quoteApprove') },
+        { id: 'reject-quote', label: this.i18n.t('workOrders.detail.quoteReject'), tone: 'secondary' },
       ];
     }
 
@@ -165,6 +159,14 @@ export class WorkOrderDetailPageComponent implements OnInit {
     return this.quoteForm.items.reduce((sum, item) => sum + this.getLineTotal(item), 0);
   }
 
+  get canSavePromises(): boolean {
+    if (!this.workOrder) {
+      return false;
+    }
+
+    return Boolean(this.buildPromisePayload());
+  }
+
   async loadWorkOrder(): Promise<void> {
     this.loading = true;
     this.error = '';
@@ -174,16 +176,31 @@ export class WorkOrderDetailPageComponent implements OnInit {
       const workOrderId = this.route.snapshot.paramMap.get('id');
 
       if (!token) {
-        this.error = 'Unable to load work order without an authenticated session.';
+        this.error = this.i18n.t('workOrders.detail.authError');
         return;
       }
 
       if (!workOrderId) {
-        this.error = 'Work order id is missing from the route.';
+        this.error = this.i18n.t('workOrders.detail.missingId');
         return;
       }
 
-      this.workOrder = await this.apiService.getWorkOrder(token, workOrderId);
+      const [workOrder, customers, vehicles, services, history, notifications] = await Promise.all([
+        this.apiService.getWorkOrder(token, workOrderId),
+        this.apiService.listCustomers(token),
+        this.apiService.listVehicles(token),
+        this.apiService.listServices(token),
+        this.apiService.getWorkOrderHistory(token, workOrderId),
+        this.apiService.getWorkOrderNotifications(token, workOrderId),
+      ]);
+
+      this.workOrder = workOrder;
+      this.customers = customers;
+      this.vehicles = vehicles;
+      this.services = services;
+      this.history = history;
+      this.notifications = notifications;
+      this.resetPromiseForm();
 
       if (this.workOrder.type === 'diagnostic') {
         const [diagnosticResult, quoteResult] = await Promise.allSettled([
@@ -207,7 +224,9 @@ export class WorkOrderDetailPageComponent implements OnInit {
       }
     } catch (error) {
       console.error('Failed to load work order', error);
-      this.error = 'Failed to load work order detail from the backend.';
+      this.error = this.i18n.t('workOrders.detail.error');
+      this.history = [];
+      this.notifications = [];
     } finally {
       this.loading = false;
     }
@@ -218,7 +237,7 @@ export class WorkOrderDetailPageComponent implements OnInit {
 
     const payload = this.buildDiagnosticPayload();
     if (!payload) {
-      this.error = 'Enter a diagnostic summary before creating the draft.';
+      this.error = this.i18n.t('workOrders.detail.diagnosticSummaryRequired');
       return;
     }
 
@@ -233,7 +252,7 @@ export class WorkOrderDetailPageComponent implements OnInit {
       await this.loadWorkOrder();
     } catch (error) {
       console.error('Failed to create diagnostic draft', error);
-      this.error = 'Failed to create diagnostic draft.';
+      this.error = this.i18n.t('workOrders.detail.diagnosticCreateError');
     } finally {
       this.actionLoading = '';
     }
@@ -244,7 +263,7 @@ export class WorkOrderDetailPageComponent implements OnInit {
 
     const payload = this.buildQuotePayload();
     if (!payload) {
-      this.error = 'Add at least one valid quote item before creating the draft.';
+      this.error = this.i18n.t('workOrders.detail.quoteItemRequired');
       return;
     }
 
@@ -259,7 +278,7 @@ export class WorkOrderDetailPageComponent implements OnInit {
       await this.loadWorkOrder();
     } catch (error) {
       console.error('Failed to create quote draft', error);
-      this.error = 'Failed to create quote draft.';
+      this.error = this.i18n.t('workOrders.detail.quoteCreateError');
     } finally {
       this.actionLoading = '';
     }
@@ -275,7 +294,7 @@ export class WorkOrderDetailPageComponent implements OnInit {
     try {
       const token = await this.authService.getAccessToken();
       if (!token) {
-        this.error = 'Unable to run action without an authenticated session.';
+        this.error = this.i18n.t('workOrders.detail.actionAuthError');
         return;
       }
 
@@ -296,9 +315,70 @@ export class WorkOrderDetailPageComponent implements OnInit {
       await this.loadWorkOrder();
     } catch (error) {
       console.error('Failed to run work order action', error);
-      this.error = 'Failed to update work order status.';
+      this.error = this.i18n.t('workOrders.detail.actionError');
     } finally {
       this.actionLoading = '';
+    }
+  }
+
+  async savePromises(): Promise<void> {
+    if (!this.workOrder) return;
+
+    const payload = this.buildPromisePayload();
+    if (!payload) {
+      this.promiseError = this.i18n.t('workOrders.detail.promisesChangeRequired');
+      return;
+    }
+
+    this.promiseSubmitting = true;
+    this.promiseError = '';
+    this.promiseSuccessMessage = '';
+
+    try {
+      const token = await this.authService.getAccessToken();
+      if (!token) {
+        this.promiseError = this.i18n.t('workOrders.detail.promisesAuthError');
+        return;
+      }
+
+      await this.apiService.updateWorkOrderPromises(token, this.workOrder.id, payload);
+      this.promiseSuccessMessage = this.i18n.t('workOrders.detail.promisesSaved');
+      await this.loadWorkOrder();
+    } catch (error) {
+      console.error('Failed to update work order promises', error);
+      this.promiseError = this.resolvePromiseError(error);
+    } finally {
+      this.promiseSubmitting = false;
+    }
+  }
+
+  async acknowledgeNotification(notificationId: string): Promise<void> {
+    if (!this.workOrder) {
+      return;
+    }
+
+    this.acknowledgingNotificationId = notificationId;
+    this.notificationError = '';
+
+    try {
+      const token = await this.authService.getAccessToken();
+      if (!token) {
+        this.notificationError =
+          this.i18n.t('workOrders.detail.communicationAuthError');
+        return;
+      }
+
+      await this.apiService.acknowledgeWorkOrderNotification(
+        token,
+        this.workOrder.id,
+        notificationId,
+      );
+      await this.loadWorkOrder();
+    } catch (error) {
+      console.error('Failed to acknowledge notification', error);
+      this.notificationError = this.i18n.t('workOrders.detail.communicationError');
+    } finally {
+      this.acknowledgingNotificationId = '';
     }
   }
 
@@ -326,6 +406,120 @@ export class WorkOrderDetailPageComponent implements OnInit {
     }
 
     this.quoteForm.items.splice(index, 1);
+  }
+
+  historyLabel(action: AuditHistoryEventViewModel['action']): string {
+    const labels: Record<AuditHistoryEventViewModel['action'], string> = {
+      work_order_created: this.i18n.t('workOrders.detail.history.work_order_created'),
+      work_order_status_changed: this.i18n.t('workOrders.detail.history.work_order_status_changed'),
+      work_order_promises_changed: this.i18n.t('workOrders.detail.history.work_order_promises_changed'),
+      diagnostic_created: this.i18n.t('workOrders.detail.history.diagnostic_created'),
+      diagnostic_completed: this.i18n.t('workOrders.detail.history.diagnostic_completed'),
+      quote_created: this.i18n.t('workOrders.detail.history.quote_created'),
+      quote_sent: this.i18n.t('workOrders.detail.history.quote_sent'),
+      quote_approved: this.i18n.t('workOrders.detail.history.quote_approved'),
+      quote_rejected: this.i18n.t('workOrders.detail.history.quote_rejected'),
+    };
+
+    return labels[action];
+  }
+
+  notificationLabel(
+    eventType: NotificationOutboxItemViewModel['eventType'],
+  ): string {
+    const labels: Record<NotificationOutboxItemViewModel['eventType'], string> = {
+      quote_sent: this.i18n.t('workOrders.detail.notification.quote_sent'),
+      work_order_promises_changed: this.i18n.t('workOrders.detail.notification.work_order_promises_changed'),
+      work_order_status_changed: this.i18n.t('workOrders.detail.notification.work_order_status_changed'),
+    };
+
+    return labels[eventType];
+  }
+
+  historyReason(event: AuditHistoryEventViewModel): string | null {
+    return this.readMetadata(event, 'reason');
+  }
+
+  hasChange(
+    event: AuditHistoryEventViewModel,
+    fromKey: string,
+    toKey: string,
+  ): boolean {
+    return this.readMetadata(event, fromKey) !== this.readMetadata(event, toKey);
+  }
+
+  readMetadata(
+    event: AuditHistoryEventViewModel,
+    key: string,
+  ): string | null {
+    const value = event.metadata?.[key];
+    return typeof value === 'string' ? value : null;
+  }
+
+  formatValue(value: string | null): string {
+    if (!value) return this.i18n.t('common.notAvailable');
+    return this.i18n.t(`workOrders.status.${value}`);
+  }
+
+  formatDate(value: string | null): string {
+    return formatDateTime(value, this.i18n.t('common.notSetYet'));
+  }
+
+  private describeVehicle(
+    vehicle: VehicleViewModel | undefined,
+    fallbackVehicleId: string,
+  ): string {
+    return formatVehicleLabel(vehicle, fallbackVehicleId);
+  }
+
+  private buildPromisePayload():
+    | {
+        promisedDiagnosticAt?: string;
+        promisedDeliveryAt?: string;
+        reason?: string;
+      }
+    | null {
+    if (!this.workOrder) {
+      return null;
+    }
+
+    const payload: {
+      promisedDiagnosticAt?: string;
+      promisedDeliveryAt?: string;
+      reason?: string;
+    } = {};
+
+    const promisedDiagnosticAt = this.normalizeDateTimeLocal(
+      this.promiseForm.promisedDiagnosticAt,
+    );
+    const promisedDeliveryAt = this.normalizeDateTimeLocal(
+      this.promiseForm.promisedDeliveryAt,
+    );
+
+    if (
+      promisedDiagnosticAt !== null &&
+      promisedDiagnosticAt !== this.workOrder.promisedDiagnosticAt
+    ) {
+      payload.promisedDiagnosticAt = promisedDiagnosticAt;
+    }
+
+    if (
+      promisedDeliveryAt !== null &&
+      promisedDeliveryAt !== this.workOrder.promisedDeliveryAt
+    ) {
+      payload.promisedDeliveryAt = promisedDeliveryAt;
+    }
+
+    const normalizedReason = this.promiseForm.reason.trim();
+    if (
+      (payload.promisedDiagnosticAt !== undefined ||
+        payload.promisedDeliveryAt !== undefined) &&
+      normalizedReason
+    ) {
+      payload.reason = normalizedReason;
+    }
+
+    return Object.keys(payload).length ? payload : null;
   }
 
   private resolveOptional<T>(result: PromiseSettledResult<T>): T | null {
@@ -403,6 +597,36 @@ export class WorkOrderDetailPageComponent implements OnInit {
     return value === null || value === undefined || Number.isNaN(value) ? null : Number(value);
   }
 
+  private normalizeDateTimeLocal(value: string): string | null {
+    const normalized = value.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    return new Date(normalized).toISOString();
+  }
+
+  private formatDateTimeLocal(value: string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().slice(0, 16);
+  }
+
+  private resolvePromiseError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.error?.message) {
+      return Array.isArray(error.error.message)
+        ? error.error.message.join(', ')
+        : error.error.message;
+    }
+
+    return this.i18n.t('workOrders.detail.promisesError');
+  }
+
   private resetDiagnosticForm(): void {
     this.diagnosticForm = {
       summary: '',
@@ -415,6 +639,19 @@ export class WorkOrderDetailPageComponent implements OnInit {
   private resetQuoteForm(): void {
     this.quoteForm = {
       items: [{ description: '', quantity: 1, unitPrice: 0 }],
+    };
+  }
+
+  resetPromiseForm(): void {
+    this.promiseError = '';
+    this.promiseForm = {
+      promisedDiagnosticAt: this.formatDateTimeLocal(
+        this.workOrder?.promisedDiagnosticAt ?? null,
+      ),
+      promisedDeliveryAt: this.formatDateTimeLocal(
+        this.workOrder?.promisedDeliveryAt ?? null,
+      ),
+      reason: '',
     };
   }
 }

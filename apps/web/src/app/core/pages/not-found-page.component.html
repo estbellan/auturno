@@ -1,0 +1,17 @@
+
+    <div class="error-shell">
+      <div class="error-content card-elevated">
+        <span class="ms ms--xl" style="color: var(--at-on-surface-var)">travel_explore</span>
+        <div class="error-content__text">
+          <p class="type-label-md" style="color: var(--at-on-surface-var); letter-spacing: 0.05em; text-transform: uppercase;">
+            {{ i18n.t('error.notFound.label') }}
+          </p>
+          <h1 class="type-headline-sm" style="margin: 0">{{ i18n.t('error.notFound.title') }}</h1>
+          <p class="type-body-md" style="margin: 0">{{ i18n.t('error.notFound.body') }}</p>
+        </div>
+        <div class="error-content__actions">
+          <a class="btn-filled" routerLink="/">{{ i18n.t('error.notFound.goHome') }}</a>
+          <a class="btn-text" routerLink="/auth/login">{{ i18n.t('common.login') }}</a>
+        </div>
+      </div>
+    </div>

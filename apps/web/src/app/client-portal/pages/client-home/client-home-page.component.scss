@@ -1,0 +1,238 @@
+/* ── Page layout ──────────────────────────────────────────────────────── */
+.client-home {
+  display: grid;
+  gap: var(--at-sp-4);
+  padding: var(--at-sp-4);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* ── Hero card ────────────────────────────────────────────────────────── */
+.hero-card {
+  padding: var(--at-sp-5);
+  border-radius: var(--at-shape-lg);
+  background: var(--at-surface);
+  border: 1px solid var(--at-outline-variant);
+  display: grid;
+  gap: var(--at-sp-2);
+
+  h2 { margin: 0; }
+  .support-copy { margin: 0; }
+}
+
+/* ── Detail card ─────────────────────────────────────────────────────── */
+.detail-card {
+  padding: var(--at-sp-4) var(--at-sp-5);
+  border-radius: var(--at-shape-lg);
+  background: var(--at-surface);
+  border: 1px solid var(--at-outline-variant);
+  display: grid;
+  gap: var(--at-sp-4);
+}
+
+/* ── Section header ───────────────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--at-sp-3);
+
+  h3 { margin: 0; }
+}
+
+/* ── Reference/summary grid ───────────────────────────────────────────── */
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--at-sp-3);
+  margin: 0;
+
+  dt {
+    color: var(--at-on-surface-var);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 0 2px;
+  }
+
+  dd {
+    color: var(--at-on-surface);
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+/* ── Stack list of items ──────────────────────────────────────────────── */
+.stack-list {
+  display: grid;
+  gap: var(--at-sp-2);
+}
+
+/* ── List item ────────────────────────────────────────────────────────── */
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-3);
+  padding: var(--at-sp-3) var(--at-sp-4);
+  border-radius: var(--at-shape-md);
+  background: var(--at-surface-2);
+  border: 1px solid var(--at-outline-variant);
+
+  &__icon {
+    color: var(--at-on-surface-var);
+    flex-shrink: 0;
+  }
+}
+
+.work-order-item { align-items: flex-start; }
+
+.item-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+
+  strong { color: var(--at-on-surface); font-size: 14px; }
+  span   { color: var(--at-on-surface-var); font-size: 13px; }
+}
+
+.item-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--at-sp-2);
+  align-items: center;
+}
+
+/* ── Work order meta dl ───────────────────────────────────────────────── */
+.work-order-meta {
+  margin: var(--at-sp-2) 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--at-sp-2);
+
+  dt {
+    color: var(--at-on-surface-var);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 0 2px;
+  }
+
+  dd { color: var(--at-on-surface); font-size: 13px; margin: 0; }
+}
+
+/* ── Form ─────────────────────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  gap: var(--at-sp-3);
+}
+
+.field { display: block; }
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--at-sp-2);
+  padding-top: var(--at-sp-1);
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-1);
+  color: var(--at-error);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.primary-button,
+.primary-link,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--at-sp-1);
+  padding: var(--at-sp-2) var(--at-sp-4);
+  border-radius: var(--at-shape-full);
+  border: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--at-dur-short3) var(--at-ease-std);
+
+  &[disabled] { opacity: 0.5; cursor: default; pointer-events: none; }
+}
+
+.primary-button,
+.primary-link {
+  background: var(--at-primary);
+  color: var(--at-on-primary);
+}
+
+.secondary-button {
+  background: var(--at-secondary-container);
+  color: var(--at-on-secondary-container);
+}
+
+/* ── Action row ───────────────────────────────────────────────────────── */
+.action-row {
+  display: flex;
+  gap: var(--at-sp-2);
+  flex-wrap: wrap;
+}
+
+/* ── Status card ─────────────────────────────────────────────────────── */
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: var(--at-sp-2);
+  padding: var(--at-sp-3) var(--at-sp-4);
+  border-radius: var(--at-shape-sm);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.status-card.neutral {
+  background: var(--at-surface-variant);
+  color: var(--at-on-surface);
+  border-color: var(--at-outline-variant);
+}
+
+.status-card.error {
+  background: var(--at-error-container);
+  color: var(--at-on-error-container);
+  border-color: color-mix(in srgb, var(--at-error) 30%, transparent);
+}
+
+/* ── Activation copy ─────────────────────────────────────────────────── */
+.activation-copy {
+  margin: 0;
+  font-size: 14px;
+  color: var(--at-on-surface-var);
+
+  &.muted { font-size: 13px; }
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────── */
+.spin {
+  animation: at-spin 0.8s linear infinite;
+}
+
+/* ── Desktop ─────────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .client-home { padding: var(--at-sp-6) var(--at-sp-4); }
+
+  .reference-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .form-actions { grid-column: 1 / -1; }
+}

@@ -1,0 +1,37 @@
+
+    /* M3 segmented button — same visual style as theme toggle */
+    .lang-seg {
+      display: inline-flex;
+      height: 36px;
+      border-radius: var(--at-shape-full);
+      border: 1px solid var(--at-outline-variant);
+      overflow: hidden;
+    }
+
+    .lang-seg__btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      padding: 0 var(--at-sp-3);
+      border: none;
+      background: transparent;
+      color: var(--at-on-surface-var);
+      font-family: var(--at-font);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.031em;
+      cursor: pointer;
+      transition: background var(--at-dur-short3) var(--at-ease-std),
+                  color     var(--at-dur-short3) var(--at-ease-std);
+
+      &:hover { background: color-mix(in srgb, var(--at-on-surface) 8%, transparent); color: var(--at-on-surface); }
+      &:focus { outline: none; background: color-mix(in srgb, var(--at-on-surface) 12%, transparent); }
+
+      &.active {
+        background: var(--at-secondary-container);
+        color: var(--at-on-secondary-container);
+      }
+
+      & + & { border-left: 1px solid var(--at-outline-variant); }
+    }

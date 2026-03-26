@@ -37,10 +37,19 @@ export class AuthService {
         audience: audience,
       });
 
+      let email = payload.email ? String(payload.email) : undefined;
+      let name = payload.name ? String(payload.name) : undefined;
+
+      if (!email) {
+        const userInfo = await this.fetchUserInfo(bearerToken, normalizedIssuer);
+        email = userInfo.email ?? email;
+        name = userInfo.name ?? name;
+      }
+
       return {
         sub: String(payload.sub),
-        email: payload.email ? String(payload.email) : undefined,
-        name: payload.name ? String(payload.name) : undefined,
+        email,
+        name,
       };
     } catch (error) {
       console.error('Auth0 token validation failed', {
@@ -50,6 +59,29 @@ export class AuthService {
       });
 
       throw new UnauthorizedException('Invalid Auth0 token.');
+    }
+  }
+
+  private async fetchUserInfo(
+    token: string,
+    issuer: string,
+  ): Promise<{ email?: string; name?: string }> {
+    try {
+      const response = await fetch(`${issuer}/userinfo`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        return {};
+      }
+
+      const data = (await response.json()) as Record<string, unknown>;
+      return {
+        email: typeof data.email === 'string' ? data.email : undefined,
+        name: typeof data.name === 'string' ? data.name : undefined,
+      };
+    } catch {
+      return {};
     }
   }
 }

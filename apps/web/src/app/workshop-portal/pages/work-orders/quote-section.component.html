@@ -1,0 +1,90 @@
+<section class="card detail-card">
+  <div class="header-row section-header">
+    <h3>{{ i18n.t('quote.title') }}</h3>
+    @if (actions.length) {
+      <div class="action-grid compact">
+        @for (action of actions; track action.id) {
+          <button
+            type="button"
+            [class.secondary]="action.tone === 'secondary'"
+            [disabled]="actionLoading === action.id"
+            (click)="actionSelected.emit(action.id)"
+          >
+            {{ actionLoading === action.id ? i18n.t('common.working') : action.label }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (quote) {
+    <dl class="detail-grid">
+      <div><dt>{{ i18n.t('quote.status') }}</dt><dd>{{ formatStatus(quote.status) }}</dd></div>
+      <div><dt>{{ i18n.t('quote.subtotal') }}</dt><dd>{{ formatAmount(quote.subtotal) }}</dd></div>
+      <div><dt>{{ i18n.t('quote.total') }}</dt><dd>{{ formatAmount(quote.total) }}</dd></div>
+      <div><dt>{{ i18n.t('quote.sentAt') }}</dt><dd>{{ formatDate(quote.sentAt) }}</dd></div>
+      <div><dt>{{ i18n.t('quote.respondedAt') }}</dt><dd>{{ formatDate(quote.respondedAt) }}</dd></div>
+    </dl>
+
+    <div class="quote-items">
+      @for (item of quote.items; track item.description + '-' + item.total) {
+        <div class="quote-item">
+          <div>
+            <strong>{{ item.description }}</strong>
+            <p>{{ i18n.t('quote.qty', { value: item.quantity, price: formatAmount(item.unitPrice) }) }}</p>
+          </div>
+          <span>{{ formatAmount(item.total) }}</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="empty-copy">{{ i18n.t('quote.empty') }}</p>
+
+    @if (showForm) {
+      <form class="editor-form" (ngSubmit)="createDraft.emit()">
+        <div class="inline-header">
+          <dt>{{ i18n.t('quote.items') }}</dt>
+          <button type="button" class="secondary" (click)="addItem.emit()">{{ i18n.t('common.add') }}</button>
+        </div>
+
+        <div class="editor-list">
+          @for (item of form.items; track $index; let index = $index) {
+            <div class="quote-editor-card">
+              <label class="field">
+                <span>{{ i18n.t('common.description') }}</span>
+                <input type="text" [name]="'description' + index" [(ngModel)]="form.items[index].description" required placeholder=" " />
+              </label>
+
+              <div class="detail-grid">
+                <label class="field">
+                  <span>{{ i18n.t('common.quantity') }}</span>
+                  <input type="number" [name]="'quantity' + index" [(ngModel)]="form.items[index].quantity" min="1" step="1" required placeholder=" " />
+                </label>
+                <label class="field">
+                  <span>{{ i18n.t('quote.unitPrice') }}</span>
+                  <input type="number" [name]="'unitPrice' + index" [(ngModel)]="form.items[index].unitPrice" min="0" step="0.01" required placeholder=" " />
+                </label>
+              </div>
+
+              <div class="inline-header">
+                <span>{{ i18n.t('quote.lineTotal', { value: getLineTotal(index) }) }}</span>
+                <button type="button" class="secondary" (click)="removeItem.emit(index)" [disabled]="form.items.length === 1">
+                  {{ i18n.t('common.remove') }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="totals-box">
+          <span>{{ i18n.t('quote.draftTotal') }}</span>
+          <strong>{{ formatAmount(draftTotal) }}</strong>
+        </div>
+
+        <button type="submit" [disabled]="actionLoading === 'create-quote' || !canCreateQuote">
+          {{ actionLoading === 'create-quote' ? i18n.t('common.working') : i18n.t('workOrders.detail.quoteCreate') }}
+        </button>
+      </form>
+    }
+  }
+</section>

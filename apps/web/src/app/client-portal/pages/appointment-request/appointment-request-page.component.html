@@ -1,0 +1,150 @@
+
+    <div class="request-page">
+      <at-page-shell
+        icon="calendar_add_on"
+        [title]="i18n.t('client.requests.title')"
+        [description]="i18n.t('client.requests.description')"
+      />
+
+      <div class="page-body">
+      @if (loading) {
+        <section class="status-card neutral">{{ i18n.t('client.requests.loading') }}</section>
+      } @else {
+        @if (error) {
+          <section class="status-card error">{{ error }}</section>
+        }
+
+        @if (portalMe?.status !== 'claimed') {
+          <section class="status-card neutral">
+            {{ i18n.t('client.requests.claimRequired') }}
+          </section>
+        } @else {
+          <section class="card form-card">
+            <div class="section-copy">
+              <h2>{{ i18n.t('client.requests.newTitle') }}</h2>
+              <p>{{ i18n.t('client.requests.newDescription') }}</p>
+            </div>
+
+            <form class="request-form" (ngSubmit)="submit()">
+              <label class="field">
+                <span>{{ i18n.t('common.vehicle') }}</span>
+                <select name="vehicleId" [(ngModel)]="form.vehicleId" required>
+                  <option value="" disabled>{{ i18n.t('client.requests.vehiclePlaceholder') }}</option>
+                  @for (vehicle of vehicles; track vehicle.id) {
+                    <option [value]="vehicle.id">{{ vehicle.plate }}{{ vehicleSummary(vehicle) }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="field">
+                <span>{{ i18n.t('common.service') }}</span>
+                <select name="serviceId" [(ngModel)]="form.serviceId" required>
+                  <option value="" disabled>{{ i18n.t('client.requests.servicePlaceholder') }}</option>
+                  @for (service of services; track service.id) {
+                    <option [value]="service.id">{{ service.name }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="field">
+                <span>{{ i18n.t('client.requests.preferredDateTime') }}</span>
+                <input
+                  type="datetime-local"
+                  name="preferredDateTime"
+                  [(ngModel)]="form.preferredDateTime"
+                  required
+                  placeholder=" "
+                />
+              </label>
+
+              <label class="field field-full">
+                <span>{{ i18n.t('common.message') }}</span>
+                <textarea
+                  name="comment"
+                  [(ngModel)]="form.comment"
+                  rows="3"
+                  [placeholder]="i18n.t('client.requests.messagePlaceholder')"
+                ></textarea>
+              </label>
+
+              @if (!vehicles.length) {
+                <section class="status-card neutral">{{ i18n.t('client.requests.noVehicles') }}</section>
+              }
+
+              @if (!services.length) {
+                <section class="status-card neutral">{{ i18n.t('client.requests.noServices') }}</section>
+              }
+
+              @if (formError) {
+                <section class="status-card error">{{ formError }}</section>
+              }
+
+              @if (successMessage) {
+                <section class="status-card success">{{ successMessage }}</section>
+              }
+
+              <button
+                type="submit"
+                [disabled]="submitting || !canSubmit || !vehicles.length || !services.length"
+              >
+                {{ submitting ? i18n.t('client.requests.submitting') : i18n.t('client.requests.submit') }}
+              </button>
+            </form>
+          </section>
+
+          <section class="card list-card">
+            <div class="section-copy">
+              <h2>{{ i18n.t('client.requests.historyTitle') }}</h2>
+              <p>{{ i18n.t('client.requests.historyDescription') }}</p>
+            </div>
+
+            @if (!requests.length) {
+              <section class="status-card neutral">
+                {{ i18n.t('client.requests.empty') }}
+              </section>
+            } @else {
+              <div class="request-list">
+                @for (request of requests; track request.id) {
+                  <article class="request-card">
+                    <div class="request-header">
+                      <div>
+                        <p class="eyebrow">{{ serviceName(request.serviceId) }}</p>
+                        <h3>{{ vehicleName(request.vehicleId) }}</h3>
+                      </div>
+
+                      <span class="status-chip">{{ formatStatus(request.status) }}</span>
+                    </div>
+
+                    <div class="request-meta">
+                      <div>
+                        <p class="detail-label">{{ i18n.t('common.preferred') }}</p>
+                        <span>{{ preferredLabel(request) }}</span>
+                      </div>
+                      <div>
+                        <p class="detail-label">{{ i18n.t('common.created') }}</p>
+                        <span>{{ formatDate(request.createdAt) }}</span>
+                      </div>
+                      <div>
+                        <p class="detail-label">{{ i18n.t('common.appointment') }}</p>
+                        <span>
+                          {{
+                            request.appointmentId
+                              ? i18n.t('client.requests.converted')
+                              : i18n.t('client.requests.notConverted')
+                          }}
+                        </span>
+                      </div>
+                    </div>
+
+                    @if (request.comment) {
+                      <p class="comment-copy">{{ request.comment }}</p>
+                    }
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        }
+      }
+      </div>
+    </div>

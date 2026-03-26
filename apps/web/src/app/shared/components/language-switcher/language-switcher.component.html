@@ -1,0 +1,13 @@
+
+    <div class="lang-seg" [attr.aria-label]="i18n.t('shell.language')">
+      @for (lang of i18n.supportedLanguages; track lang) {
+        <button
+          type="button"
+          class="lang-seg__btn"
+          [class.active]="i18n.language() === lang"
+          [attr.aria-pressed]="i18n.language() === lang"
+          (click)="setLanguage(lang)">
+          {{ i18n.t('language.' + lang) }}
+        </button>
+      }
+    </div>

@@ -37,6 +37,29 @@ export class AuditService {
     return this.toEntity(created);
   }
 
+  async listWorkOrderHistory(
+    workshopId: string,
+    workOrderId: string,
+  ): Promise<AuditEntity[]> {
+    const events = await this.auditEventModel
+      .find({
+        workshopId,
+        $or: [
+          {
+            entityType: 'work_order',
+            entityId: workOrderId,
+          },
+          {
+            'metadata.workOrderId': workOrderId,
+          },
+        ],
+      })
+      .sort({ createdAt: 1, _id: 1 })
+      .exec();
+
+    return events.map((event) => this.toEntity(event));
+  }
+
   private toEntity(auditEvent: AuditEventDocument): AuditEntity {
     return {
       id: auditEvent._id.toString(),

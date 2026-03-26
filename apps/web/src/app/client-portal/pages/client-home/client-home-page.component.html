@@ -1,0 +1,352 @@
+
+<section class="client-home at-page">
+
+  <!-- Hero -->
+  <header class="hero-card">
+    <p class="eyebrow">{{ i18n.t('client.home.eyebrow') }}</p>
+    <h2>{{ i18n.t('client.home.title') }}</h2>
+    <p class="support-copy">{{ i18n.t('client.home.description') }}</p>
+  </header>
+
+  @if (loading) {
+    <div class="status-card neutral">
+      <span class="ms ms--sm">hourglass_top</span>
+      {{ i18n.t('client.home.loading') }}
+    </div>
+  } @else {
+
+    @if (error) {
+      <div class="status-card error">
+        <span class="ms ms--sm">error_outline</span>
+        {{ error }}
+      </div>
+    }
+
+    <!-- ── Invited: claim access ── -->
+    @if (portalMe?.status === 'invited' && portalMe?.customer) {
+      <section class="detail-card">
+        <div class="section-header">
+          <div>
+            <p class="section-label">{{ i18n.t('client.home.claimLabel') }}</p>
+            <h3>{{ i18n.t('client.home.claimTitle') }}</h3>
+          </div>
+        </div>
+
+        <p class="activation-copy">
+          {{ i18n.t('client.home.claimDescription', { name: portalMe?.customer?.name ?? '' }) }}
+        </p>
+        <p class="activation-copy">
+          {{ i18n.t('client.home.claimHelp') }}
+        </p>
+
+        @if (portalMe?.invitedAt) {
+          <p class="activation-copy muted">
+            {{ i18n.t('client.home.claimInvitedAt', { value: formatDate(portalMe?.invitedAt ?? null) }) }}
+          </p>
+        }
+
+        @if (claimError) {
+          <div class="status-card error">
+            <span class="ms ms--sm">error_outline</span>
+            {{ claimError }}
+          </div>
+        }
+
+        <div class="action-row">
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="claimSubmitting"
+            (click)="claimPortalAccess()"
+          >
+            @if (claimSubmitting) {
+              <span class="ms ms--sm spin">autorenew</span>
+            } @else {
+              <span class="ms ms--sm">how_to_reg</span>
+            }
+            {{
+              claimSubmitting
+                ? i18n.t('client.home.claimSubmitting')
+                : i18n.t('client.home.claimSubmit')
+            }}
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- ── Not invited ── -->
+    @else if (portalMe?.status === 'not_invited') {
+      <div class="status-card neutral">
+        <span class="ms ms--sm">info</span>
+        {{ i18n.t('client.home.notInvited') }}
+      </div>
+    }
+
+    <!-- ── Profile card ── -->
+    @else if (profile) {
+      <section class="detail-card">
+        <div class="section-header">
+          <div>
+            <p class="section-label">{{ i18n.t('client.home.profile') }}</p>
+            <h3>{{ i18n.t('client.home.profileTitle') }}</h3>
+          </div>
+
+          @if (!editingProfile) {
+            <button type="button" class="secondary-button" (click)="startProfileEdit()">
+              <span class="ms ms--sm">edit</span>
+              {{ i18n.t('client.home.editProfile') }}
+            </button>
+          }
+        </div>
+
+        @if (editingProfile) {
+          <form class="form-grid" (ngSubmit)="saveProfile()">
+            <label class="field">
+              <span>{{ i18n.t('intake.customerName') }}</span>
+              <input
+                name="profileName"
+                [(ngModel)]="profileForm.name"
+                required
+                autocomplete="name"
+                placeholder=" "
+              />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.phone') }}</span>
+              <input
+                name="profilePhone"
+                [(ngModel)]="profileForm.phone"
+                autocomplete="tel"
+                placeholder=" "
+              />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.email') }}</span>
+              <input
+                name="profileEmail"
+                [(ngModel)]="profileForm.email"
+                autocomplete="email"
+                placeholder=" "
+              />
+            </label>
+
+            @if (profileError) {
+              <p class="form-error">
+                <span class="ms ms--sm">error_outline</span>
+                {{ profileError }}
+              </p>
+            }
+
+            <div class="form-actions">
+              <button type="submit" class="primary-button" [disabled]="savingProfile">
+                @if (savingProfile) { <span class="ms ms--sm spin">autorenew</span> }
+                {{ savingProfile ? i18n.t('client.home.savingProfile') : i18n.t('client.home.saveProfile') }}
+              </button>
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="savingProfile"
+                (click)="cancelProfileEdit()"
+              >
+                {{ i18n.t('common.cancel') }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <dl class="reference-grid">
+            <div>
+              <dt>{{ i18n.t('intake.customerName') }}</dt>
+              <dd>{{ profile.name }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('common.email') }}</dt>
+              <dd>{{ profile.email || i18n.t('common.notSetYet') }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('common.phone') }}</dt>
+              <dd>{{ profile.phone || i18n.t('common.notSetYet') }}</dd>
+            </div>
+          </dl>
+        }
+      </section>
+    }
+
+    <!-- ── Vehicles + Work orders (claimed only) ── -->
+    @if (portalMe?.status === 'claimed') {
+
+      <!-- Vehicles -->
+      <section class="detail-card">
+        <div class="section-header">
+          <div>
+            <p class="section-label">{{ i18n.t('client.home.vehicles') }}</p>
+            <h3>{{ i18n.t('client.home.vehiclesTitle') }}</h3>
+          </div>
+
+          @if (!editingVehicleId) {
+            <button type="button" class="secondary-button" (click)="startCreateVehicle()">
+              <span class="ms ms--sm">add</span>
+              {{ i18n.t('client.home.addVehicle') }}
+            </button>
+          }
+        </div>
+
+        @if (editingVehicleId) {
+          <form class="form-grid" (ngSubmit)="saveVehicle()">
+            <label class="field">
+              <span>{{ i18n.t('common.plate') }}</span>
+              <input name="vehiclePlate" [(ngModel)]="vehicleForm.plate" required placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.brand') }}</span>
+              <input name="vehicleBrand" [(ngModel)]="vehicleForm.brand" placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.model') }}</span>
+              <input name="vehicleModel" [(ngModel)]="vehicleForm.model" placeholder=" " />
+            </label>
+
+            <label class="field">
+              <span>{{ i18n.t('common.year') }}</span>
+              <input
+                name="vehicleYear"
+                [(ngModel)]="vehicleForm.year"
+                inputmode="numeric"
+                placeholder=" "
+              />
+            </label>
+
+            @if (vehicleError) {
+              <p class="form-error">
+                <span class="ms ms--sm">error_outline</span>
+                {{ vehicleError }}
+              </p>
+            }
+
+            <div class="form-actions">
+              <button type="submit" class="primary-button" [disabled]="savingVehicle">
+                @if (savingVehicle) { <span class="ms ms--sm spin">autorenew</span> }
+                {{
+                  savingVehicle
+                    ? i18n.t('client.home.savingVehicle')
+                    : editingVehicleId === 'new'
+                      ? i18n.t('client.home.createVehicle')
+                      : i18n.t('client.home.saveVehicle')
+                }}
+              </button>
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="savingVehicle"
+                (click)="cancelVehicleEdit()"
+              >
+                {{ i18n.t('common.cancel') }}
+              </button>
+            </div>
+          </form>
+        }
+
+        @if (!vehicles.length) {
+          <div class="status-card neutral">
+            <span class="ms ms--sm">directions_car</span>
+            {{ i18n.t('client.home.vehiclesEmpty') }}
+          </div>
+        } @else {
+          <div class="stack-list">
+            @for (vehicle of vehicles; track vehicle.id) {
+              <article class="list-item">
+                <span class="ms list-item__icon">directions_car</span>
+                <div class="item-copy">
+                  <strong>{{ vehicle.plate }}</strong>
+                  <span>{{ describeVehicle(vehicle) }}</span>
+                </div>
+                <div class="item-actions">
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    [disabled]="editingVehicleId !== null"
+                    (click)="startEditVehicle(vehicle)"
+                  >
+                    <span class="ms ms--sm">edit</span>
+                    {{ i18n.t('common.edit') }}
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Work orders -->
+      <section class="detail-card">
+        <div class="section-header">
+          <div>
+            <p class="section-label">{{ i18n.t('client.home.workOrders') }}</p>
+            <h3>{{ i18n.t('client.home.workOrdersTitle') }}</h3>
+          </div>
+        </div>
+
+        @if (!workOrders.length) {
+          <div class="status-card neutral">
+            <span class="ms ms--sm">handyman</span>
+            {{ i18n.t('client.home.workOrdersEmpty') }}
+          </div>
+        } @else {
+          <div class="stack-list">
+            @for (workOrder of workOrders; track workOrder.workOrderId) {
+              <article class="list-item work-order-item">
+                <div class="item-copy">
+                  <p class="item-kicker">
+                    {{ workOrder.vehicleLabel }} · {{ workOrder.serviceName }}
+                  </p>
+                  <strong>{{ workOrder.customerFacingStatusLabel }}</strong>
+                  <span>
+                    {{ i18n.t('client.home.updated', { value: formatDate(workOrder.lastUpdatedAt) }) }}
+                  </span>
+
+                  <dl class="work-order-meta">
+                    <div>
+                      <dt>{{ i18n.t('common.type') }}</dt>
+                      <dd>{{ formatToken(workOrder.type) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ i18n.t('common.status') }}</dt>
+                      <dd>{{ formatToken(workOrder.currentStatus) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ i18n.t('workOrders.detail.promiseDiagnostic') }}</dt>
+                      <dd>{{ formatDate(workOrder.promisedDiagnosticAt) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ i18n.t('workOrders.detail.promiseDelivery') }}</dt>
+                      <dd>{{ formatDate(workOrder.promisedDeliveryAt) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ i18n.t('quote.title') }}</dt>
+                      <dd>{{ formatQuoteStatus(workOrder.quoteStatus) }}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div class="item-actions">
+                  <a
+                    class="primary-link"
+                    [routerLink]="['/client/work-orders/status', workOrder.workOrderId]"
+                  >
+                    <span class="ms ms--sm">open_in_new</span>
+                    {{ i18n.t('client.home.openTracking') }}
+                  </a>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+
+    } <!-- /claimed -->
+
+  } <!-- /!loading -->
+</section>

@@ -1,0 +1,210 @@
+<div class="vehicles-page">
+  <at-page-shell
+    icon="directions_car"
+    [title]="i18n.t('vehicles.title')"
+    [description]="i18n.t('vehicles.description')"
+  />
+
+  <div class="page-body">
+  <section class="card form-card">
+    <div class="section-copy">
+      <h2>{{ i18n.t('vehicles.create') }}</h2>
+      <p>{{ i18n.t('vehicles.createCopy') }}</p>
+    </div>
+
+    <form class="vehicle-form" (ngSubmit)="submit()">
+      <label class="field">
+        <span>{{ i18n.t('common.customer') }}</span>
+        @if (customersLoading) {
+          <div class="status-card neutral">{{ i18n.t('vehicles.customersLoading') }}</div>
+        } @else if (!customers.length) {
+          <div class="status-card neutral">{{ i18n.t('vehicles.customersEmpty') }}</div>
+        } @else {
+          <select name="customerId" [(ngModel)]="form.customerId" required>
+            <option value="" disabled>{{ i18n.t('vehicles.selectCustomer') }}</option>
+            @for (customer of customers; track customer.id) {
+              <option [value]="customer.id">{{ customer.name }}</option>
+            }
+          </select>
+        }
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.plate') }}</span>
+        <input type="text" name="plate" [(ngModel)]="form.plate" required placeholder=" " />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.brand') }}</span>
+        <input type="text" name="brand" [(ngModel)]="form.brand" placeholder=" " />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.model') }}</span>
+        <input type="text" name="model" [(ngModel)]="form.model" placeholder=" " />
+      </label>
+
+      <label class="field">
+        <span>{{ i18n.t('common.year') }}</span>
+        <input type="number" name="year" [(ngModel)]="form.year" min="1900" max="2100" placeholder=" " />
+      </label>
+
+      @if (formError) {
+        <section class="status-card error">{{ formError }}</section>
+      }
+
+      @if (successMessage) {
+        <section class="status-card success">{{ successMessage }}</section>
+      }
+
+      <button type="submit" [disabled]="submitting || customersLoading || !canSubmit">
+        {{ submitting ? i18n.t('vehicles.creating') : i18n.t('vehicles.createButton') }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card list-card">
+    <div class="section-copy">
+      <h2>{{ i18n.t('vehicles.list') }}</h2>
+      <p>{{ i18n.t('vehicles.listCopy') }}</p>
+    </div>
+
+    <label class="field">
+      <span>{{ i18n.t('workOrders.search') }}</span>
+      <input type="search" name="search" [(ngModel)]="searchTerm" [placeholder]="i18n.t('vehicles.searchPlaceholder')" />
+    </label>
+
+    @if (loading) {
+      <section class="status-card neutral">{{ i18n.t('vehicles.loading') }}</section>
+    } @else if (listError) {
+      <section class="status-card error">{{ listError }}</section>
+    } @else if (!vehicles.length) {
+      <section class="status-card neutral">{{ i18n.t('vehicles.empty') }}</section>
+    } @else if (!filteredVehicles.length) {
+      <section class="status-card neutral">{{ i18n.t('vehicles.emptySearch') }}</section>
+    } @else {
+      <div class="vehicle-list">
+        @for (vehicle of filteredVehicles; track vehicle.id) {
+          <article class="vehicle-card">
+            <div class="vehicle-header">
+              <div>
+                <p class="eyebrow">{{ i18n.t('vehicles.eyebrow') }}</p>
+                <h3>{{ vehicle.plate }}</h3>
+              </div>
+              <div class="vehicle-header-actions">
+                <span class="customer-chip">{{ customerName(vehicle.customerId) }}</span>
+                @if (editingVehicleId !== vehicle.id) {
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    (click)="startEditing(vehicle)"
+                  >
+                    {{ i18n.t('common.edit') }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (editingVehicleId === vehicle.id && editForm) {
+              <form class="vehicle-edit-form" (ngSubmit)="saveEdit(vehicle.id)">
+                <label class="field">
+                  <span>{{ i18n.t('common.plate') }}</span>
+                  <input
+                    type="text"
+                    name="edit-plate-{{ vehicle.id }}"
+                    [(ngModel)]="editForm.plate"
+                    required
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="field">
+                  <span>{{ i18n.t('common.brand') }}</span>
+                  <input
+                    type="text"
+                    name="edit-brand-{{ vehicle.id }}"
+                    [(ngModel)]="editForm.brand"
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="field">
+                  <span>{{ i18n.t('common.model') }}</span>
+                  <input
+                    type="text"
+                    name="edit-model-{{ vehicle.id }}"
+                    [(ngModel)]="editForm.model"
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="field">
+                  <span>{{ i18n.t('common.year') }}</span>
+                  <input
+                    type="number"
+                    name="edit-year-{{ vehicle.id }}"
+                    [(ngModel)]="editForm.year"
+                    min="1900"
+                    max="2100"
+                    placeholder=" "
+                  />
+                </label>
+
+                <label class="field readonly-field">
+                  <span>{{ i18n.t('vehicles.readonlyCustomer') }}</span>
+                  <input
+                    type="text"
+                    [value]="customerName(vehicle.customerId)"
+                    readonly
+                    placeholder=" "
+                  />
+                </label>
+
+                @if (editError) {
+                  <section class="status-card error">{{ editError }}</section>
+                }
+
+                <div class="actions">
+                  <button
+                    type="submit"
+                    [disabled]="editingSubmitting || !canSubmitEdit"
+                  >
+                    {{ editingSubmitting ? i18n.t('vehicles.saving') : i18n.t('vehicles.save') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    [disabled]="editingSubmitting"
+                    (click)="cancelEditing()"
+                  >
+                    {{ i18n.t('common.cancel') }}
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <div class="vehicle-details">
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.brand') }}</p>
+                  <span>{{ vehicle.brand || i18n.t('common.notProvided') }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.model') }}</p>
+                  <span>{{ vehicle.model || i18n.t('common.notProvided') }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.year') }}</p>
+                  <span>{{ vehicle.year || i18n.t('common.notProvided') }}</span>
+                </div>
+                <div>
+                  <p class="detail-label">{{ i18n.t('common.customer') }}</p>
+                  <span>{{ customerName(vehicle.customerId) }}</span>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+  </div>
+</div>

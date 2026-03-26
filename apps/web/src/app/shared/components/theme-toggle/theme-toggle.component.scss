@@ -1,0 +1,33 @@
+
+    .theme-seg {
+      display: inline-flex;
+      height: 36px;
+      border-radius: var(--at-shape-full);
+      border: 1px solid var(--at-outline-variant);
+      overflow: hidden;
+      background: rgba(255, 255, 255, .30);
+    }
+
+    .theme-seg__btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      border: none;
+      background: transparent;
+      color: var(--at-on-surface-var);
+      cursor: pointer;
+      position: relative;
+      transition: background var(--at-dur-short3) var(--at-ease-std),
+                  color     var(--at-dur-short3) var(--at-ease-std);
+
+      &:hover  { background: color-mix(in srgb, var(--at-on-surface) 8%, transparent); color: var(--at-on-surface); }
+      &:focus  { outline: none; background: color-mix(in srgb, var(--at-on-surface) 12%, transparent); }
+
+      &.active {
+        background: var(--at-secondary-container);
+        color: var(--at-on-secondary-container);
+      }
+
+      & + & { border-left: 1px solid var(--at-outline-variant); }
+    }

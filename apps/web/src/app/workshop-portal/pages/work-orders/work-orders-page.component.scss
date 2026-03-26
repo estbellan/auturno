@@ -1,0 +1,190 @@
+/* ── Page layout ──────────────────────────────────────────────────────── */
+.work-orders-page { display: flex; flex-direction: column; }
+.page-body {
+  display: grid;
+  gap: var(--at-sp-4);
+  padding: var(--at-sp-4);
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.card,
+.work-order-card {
+  border-radius: var(--at-shape-lg);
+  background: var(--at-surface);
+  border: 1px solid var(--at-outline-variant);
+}
+
+.filters-card,
+.status-card { padding: var(--at-sp-4) var(--at-sp-5); }
+
+/* ── Filters header ───────────────────────────────────────────────────── */
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--at-sp-3);
+  margin-bottom: var(--at-sp-4);
+
+  h2 { margin: 0; font-size: 16px; color: var(--at-on-surface); }
+  p  { margin: 0; font-size: 13px; color: var(--at-on-surface-var); }
+}
+
+/* ── Filters grid ─────────────────────────────────────────────────────── */
+.filters-grid { display: grid; gap: var(--at-sp-3); }
+
+input, select, button { font: inherit; }
+
+.clear-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--at-sp-1);
+  padding: var(--at-sp-2) var(--at-sp-4);
+  border-radius: var(--at-shape-full);
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: var(--at-sp-2);
+  background: var(--at-surface-variant);
+  color: var(--at-on-surface-var);
+}
+
+button[disabled] { opacity: 0.5; cursor: default; pointer-events: none; }
+
+/* ── Status card ─────────────────────────────────────────────────────── */
+.status-card {
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.error {
+  background: var(--at-error-container);
+  color: var(--at-on-error-container);
+  border-color: color-mix(in srgb, var(--at-error) 30%, transparent);
+}
+
+/* ── Work order list ──────────────────────────────────────────────────── */
+.work-order-list { display: grid; gap: var(--at-sp-3); }
+
+.work-order-card {
+  display: grid;
+  gap: var(--at-sp-3);
+  padding: var(--at-sp-4) var(--at-sp-5);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--at-dur-short3) var(--at-ease-std);
+
+  &:hover { background: var(--at-surface-2); }
+}
+
+.card-topline,
+.identity-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--at-sp-3);
+  flex-wrap: wrap;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────────── */
+.type-chip,
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--at-sp-1) var(--at-sp-3);
+  border-radius: var(--at-shape-full);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.type-chip {
+  background: var(--at-primary-container);
+  color: var(--at-on-primary-container);
+}
+
+.type-chip.diagnostic {
+  background: var(--at-warn-container);
+  color: var(--at-on-warn-container);
+}
+
+.status-chip { background: var(--at-surface-variant); color: var(--at-on-surface-var); }
+
+.status-scheduled,
+.status-reception {
+  background: var(--at-info-container, var(--at-primary-container));
+  color: var(--at-on-primary-container);
+}
+
+.status-in-diagnosis,
+.status-in-operation {
+  background: var(--at-primary-container);
+  color: var(--at-on-primary-container);
+}
+
+.status-quote-sent,
+.status-awaiting-approval {
+  background: var(--at-warn-container);
+  color: var(--at-on-warn-container);
+}
+
+.status-ready {
+  background: var(--at-ok-container);
+  color: var(--at-on-ok-container);
+}
+
+.status-closed,
+.status-picked-up {
+  background: var(--at-surface-variant);
+  color: var(--at-on-surface-var);
+}
+
+/* ── Identity block ───────────────────────────────────────────────────── */
+.identity-block {
+  strong { color: var(--at-on-surface); font-size: 15px; }
+}
+
+.eyebrow {
+  color: var(--at-on-surface-var);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 2px;
+}
+
+/* ── Card grid (dl) ───────────────────────────────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--at-sp-3);
+  margin: 0;
+}
+
+dt {
+  color: var(--at-on-surface-var);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+dd {
+  color: var(--at-on-surface);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── Desktop ─────────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .filters-grid,
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

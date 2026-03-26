@@ -29,12 +29,136 @@ export interface WorkOrderViewModel {
   createdAt: string;
 }
 
-export interface CustomerViewModel {
+export interface AuditHistoryEventViewModel {
   id: string;
   workshopId: string;
+  entityType: 'work_order' | 'diagnostic' | 'quote';
+  entityId: string;
+  action:
+    | 'work_order_created'
+    | 'work_order_status_changed'
+    | 'work_order_promises_changed'
+    | 'diagnostic_created'
+    | 'diagnostic_completed'
+    | 'quote_created'
+    | 'quote_sent'
+    | 'quote_approved'
+    | 'quote_rejected';
+  actorUserId: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface NotificationOutboxItemViewModel {
+  id: string;
+  workshopId: string;
+  workOrderId: string;
+  eventType:
+    | 'quote_sent'
+    | 'work_order_promises_changed'
+    | 'work_order_status_changed';
+  messagePreview: string;
+  status: 'pending' | 'acknowledged';
+  acknowledgedAt: string | null;
+  acknowledgedByUserId: string | null;
+  createdAt: string;
+}
+
+export interface WorkOrderTrackingViewModel {
+  workOrderId: string;
+  quoteId: string | null;
+  type: 'direct' | 'diagnostic';
+  currentStatus:
+    | 'scheduled'
+    | 'reception'
+    | 'in_diagnosis'
+    | 'quote_sent'
+    | 'awaiting_approval'
+    | 'in_operation'
+    | 'ready'
+    | 'closed'
+    | 'picked_up';
+  customerFacingStatusLabel: string;
+  vehicleLabel: string;
+  serviceName: string;
+  promisedDiagnosticAt: string | null;
+  promisedDeliveryAt: string | null;
+  quoteStatus: 'draft' | 'sent' | 'approved' | 'rejected' | null;
+  lastUpdatedAt: string;
+}
+
+export interface ClientProfileViewModel {
+  id: string;
   name: string;
   phone: string | null;
   email: string | null;
+}
+
+export interface ClientPortalMeViewModel {
+  status: 'not_invited' | 'invited' | 'claimed';
+  canClaim: boolean;
+  customer: ClientProfileViewModel | null;
+  invitedAt: string | null;
+  claimedAt: string | null;
+}
+
+export interface ClientVehicleViewModel {
+  id: string;
+  plate: string;
+  brand: string | null;
+  model: string | null;
+  year: number | null;
+  createdAt: string;
+}
+
+export interface ServiceRequestViewModel {
+  id: string;
+  workshopId: string;
+  customerId: string;
+  vehicleId: string;
+  serviceId: string;
+  preferredDateTime: string | null;
+  preferredDate: string | null;
+  comment: string | null;
+  status: 'pending' | 'reviewed' | 'accepted' | 'rejected' | 'converted';
+  appointmentId: string | null;
+  reviewedAt: string | null;
+  reviewedByUserId: string | null;
+  createdAt: string;
+}
+
+export interface ClientWorkOrderListItemViewModel {
+  workOrderId: string;
+  type: 'direct' | 'diagnostic';
+  currentStatus:
+    | 'scheduled'
+    | 'reception'
+    | 'in_diagnosis'
+    | 'quote_sent'
+    | 'awaiting_approval'
+    | 'in_operation'
+    | 'ready'
+    | 'closed'
+    | 'picked_up';
+  customerFacingStatusLabel: string;
+  vehicleLabel: string;
+  serviceName: string;
+  promisedDiagnosticAt: string | null;
+  promisedDeliveryAt: string | null;
+  quoteStatus: 'draft' | 'sent' | 'approved' | 'rejected' | null;
+  lastUpdatedAt: string;
+}
+
+export interface CustomerViewModel {
+  id: string;
+  workshopId: string;
+  authSubject: string | null;
+  inviteStatus: 'not_invited' | 'invited' | 'claimed';
+  name: string;
+  phone: string | null;
+  email: string | null;
+  invitedAt: string | null;
+  claimedAt: string | null;
   createdAt: string;
 }
 
@@ -104,6 +228,15 @@ export interface QuoteViewModel {
   createdAt: string;
 }
 
+export interface CurrentUserViewModel {
+  id: string;
+  email: string;
+  name: string;
+  workshopId: string | null;
+  roles: Array<'owner' | 'admin' | 'operator' | 'mechanic' | 'client'>;
+  permissions: string[];
+}
+
 export interface CreateDiagnosticDraftPayload {
   summary: string;
   notes?: string;
@@ -125,8 +258,12 @@ export interface CreateQuotePayload {
 export class ApiService {
   constructor(private readonly http: HttpClient) {}
 
-  async getMe(token: string) {
-    return firstValueFrom(this.http.get(`${environment.apiBaseUrl}/me`, { headers: this.authHeaders(token) }));
+  async getMe(token?: string): Promise<CurrentUserViewModel> {
+    return firstValueFrom(
+      this.http.get<CurrentUserViewModel>(`${environment.apiBaseUrl}/me`, {
+        headers: this.authHeaders(token),
+      }),
+    );
   }
 
   async bootstrapWorkshop(token: string, workshopName: string) {
@@ -142,6 +279,18 @@ export class ApiService {
   async createService(token: string, payload: { name: string; estimatedDurationHours: number; requiresDiagnostic: boolean }) {
     return firstValueFrom(
       this.http.post(`${environment.apiBaseUrl}/services`, payload, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
+  async updateService(
+    token: string,
+    serviceId: string,
+    payload: { name: string; estimatedDurationHours: number; requiresDiagnostic: boolean },
+  ): Promise<ServiceViewModel> {
+    return firstValueFrom(
+      this.http.patch<ServiceViewModel>(`${environment.apiBaseUrl}/services/${serviceId}`, payload, {
         headers: this.authHeaders(token),
       }),
     );
@@ -174,6 +323,18 @@ export class ApiService {
     );
   }
 
+  async updateCustomer(
+    token: string,
+    customerId: string,
+    payload: { name: string; phone?: string; email?: string },
+  ): Promise<CustomerViewModel> {
+    return firstValueFrom(
+      this.http.patch<CustomerViewModel>(`${environment.apiBaseUrl}/customers/${customerId}`, payload, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
   async listVehicles(token: string, customerId?: string): Promise<VehicleViewModel[]> {
     return firstValueFrom(
       this.http.get<VehicleViewModel[]>(`${environment.apiBaseUrl}/vehicles`, {
@@ -195,6 +356,23 @@ export class ApiService {
   ): Promise<VehicleViewModel> {
     return firstValueFrom(
       this.http.post<VehicleViewModel>(`${environment.apiBaseUrl}/vehicles`, payload, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
+  async updateVehicle(
+    token: string,
+    vehicleId: string,
+    payload: {
+      plate: string;
+      brand?: string;
+      model?: string;
+      year?: number;
+    },
+  ): Promise<VehicleViewModel> {
+    return firstValueFrom(
+      this.http.patch<VehicleViewModel>(`${environment.apiBaseUrl}/vehicles/${vehicleId}`, payload, {
         headers: this.authHeaders(token),
       }),
     );
@@ -232,6 +410,21 @@ export class ApiService {
     );
   }
 
+  async createCustomerInvite(
+    token: string,
+    customerId: string,
+  ): Promise<CustomerViewModel> {
+    return firstValueFrom(
+      this.http.post<CustomerViewModel>(
+        `${environment.apiBaseUrl}/customers/${customerId}/invite`,
+        {},
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
   async listWorkOrders(token: string): Promise<WorkOrderViewModel[]> {
     return firstValueFrom(
       this.http.get<WorkOrderViewModel[]>(`${environment.apiBaseUrl}/work-orders`, {
@@ -244,6 +437,290 @@ export class ApiService {
     return firstValueFrom(
       this.http.get<WorkOrderViewModel>(
         `${environment.apiBaseUrl}/work-orders/${workOrderId}`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async updateWorkOrderPromises(
+    token: string,
+    workOrderId: string,
+    payload: {
+      promisedDiagnosticAt?: string;
+      promisedDeliveryAt?: string;
+      reason?: string;
+    },
+  ): Promise<WorkOrderViewModel> {
+    return firstValueFrom(
+      this.http.patch<WorkOrderViewModel>(
+        `${environment.apiBaseUrl}/work-orders/${workOrderId}/promises`,
+        payload,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async getWorkOrderHistory(
+    token: string,
+    workOrderId: string,
+  ): Promise<AuditHistoryEventViewModel[]> {
+    return firstValueFrom(
+      this.http.get<AuditHistoryEventViewModel[]>(
+        `${environment.apiBaseUrl}/work-orders/${workOrderId}/history`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async getWorkOrderNotifications(
+    token: string,
+    workOrderId: string,
+  ): Promise<NotificationOutboxItemViewModel[]> {
+    return firstValueFrom(
+      this.http.get<NotificationOutboxItemViewModel[]>(
+        `${environment.apiBaseUrl}/work-orders/${workOrderId}/notifications`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async acknowledgeWorkOrderNotification(
+    token: string,
+    workOrderId: string,
+    notificationId: string,
+  ): Promise<NotificationOutboxItemViewModel> {
+    return firstValueFrom(
+      this.http.patch<NotificationOutboxItemViewModel>(
+        `${environment.apiBaseUrl}/work-orders/${workOrderId}/notifications/${notificationId}/acknowledge`,
+        {},
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async getClientWorkOrderTracking(
+    token: string,
+    workOrderId: string,
+  ): Promise<WorkOrderTrackingViewModel> {
+    return firstValueFrom(
+      this.http.get<WorkOrderTrackingViewModel>(
+        `${environment.apiBaseUrl}/work-orders/${workOrderId}/tracking`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async getClientProfile(token: string): Promise<ClientPortalMeViewModel> {
+    return firstValueFrom(
+      this.http.get<ClientPortalMeViewModel>(`${environment.apiBaseUrl}/client/me`, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
+  async claimClientProfile(token: string): Promise<ClientPortalMeViewModel> {
+    return firstValueFrom(
+      this.http.post<ClientPortalMeViewModel>(
+        `${environment.apiBaseUrl}/client/claim`,
+        {},
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async updateClientProfile(
+    token: string,
+    payload: { name: string; phone?: string; email?: string },
+  ): Promise<ClientProfileViewModel> {
+    return firstValueFrom(
+      this.http.patch<ClientProfileViewModel>(
+        `${environment.apiBaseUrl}/client/me`,
+        payload,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async listClientVehicles(token: string): Promise<ClientVehicleViewModel[]> {
+    return firstValueFrom(
+      this.http.get<ClientVehicleViewModel[]>(
+        `${environment.apiBaseUrl}/client/vehicles`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async createClientVehicle(
+    token: string,
+    payload: {
+      plate: string;
+      brand?: string;
+      model?: string;
+      year?: number;
+    },
+  ): Promise<ClientVehicleViewModel> {
+    return firstValueFrom(
+      this.http.post<ClientVehicleViewModel>(
+        `${environment.apiBaseUrl}/client/vehicles`,
+        payload,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async listClientServices(token: string): Promise<ServiceViewModel[]> {
+    return firstValueFrom(
+      this.http.get<ServiceViewModel[]>(
+        `${environment.apiBaseUrl}/client/services`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async updateClientVehicle(
+    token: string,
+    vehicleId: string,
+    payload: {
+      plate: string;
+      brand?: string;
+      model?: string;
+      year?: number;
+    },
+  ): Promise<ClientVehicleViewModel> {
+    return firstValueFrom(
+      this.http.patch<ClientVehicleViewModel>(
+        `${environment.apiBaseUrl}/client/vehicles/${vehicleId}`,
+        payload,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async listClientWorkOrders(
+    token: string,
+  ): Promise<ClientWorkOrderListItemViewModel[]> {
+    return firstValueFrom(
+      this.http.get<ClientWorkOrderListItemViewModel[]>(
+        `${environment.apiBaseUrl}/client/work-orders`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async listClientServiceRequests(
+    token: string,
+  ): Promise<ServiceRequestViewModel[]> {
+    return firstValueFrom(
+      this.http.get<ServiceRequestViewModel[]>(
+        `${environment.apiBaseUrl}/client/service-requests`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async createClientServiceRequest(
+    token: string,
+    payload: {
+      vehicleId: string;
+      serviceId: string;
+      preferredDateTime?: string;
+      preferredDate?: string;
+      comment?: string;
+    },
+  ): Promise<ServiceRequestViewModel> {
+    return firstValueFrom(
+      this.http.post<ServiceRequestViewModel>(
+        `${environment.apiBaseUrl}/client/service-requests`,
+        payload,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async listWorkshopServiceRequests(
+    token: string,
+  ): Promise<ServiceRequestViewModel[]> {
+    return firstValueFrom(
+      this.http.get<ServiceRequestViewModel[]>(
+        `${environment.apiBaseUrl}/service-requests`,
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async updateWorkshopServiceRequestStatus(
+    token: string,
+    serviceRequestId: string,
+    status: 'reviewed' | 'accepted' | 'rejected',
+  ): Promise<ServiceRequestViewModel> {
+    return firstValueFrom(
+      this.http.patch<ServiceRequestViewModel>(
+        `${environment.apiBaseUrl}/service-requests/${serviceRequestId}/status`,
+        { status },
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async convertWorkshopServiceRequest(
+    token: string,
+    serviceRequestId: string,
+    payload?: { scheduledStartAt?: string },
+  ): Promise<{ serviceRequest: ServiceRequestViewModel; appointmentId: string }> {
+    return firstValueFrom(
+      this.http.post<{ serviceRequest: ServiceRequestViewModel; appointmentId: string }>(
+        `${environment.apiBaseUrl}/service-requests/${serviceRequestId}/convert-to-appointment`,
+        payload ?? {},
+        {
+          headers: this.authHeaders(token),
+        },
+      ),
+    );
+  }
+
+  async submitCustomerQuoteResponse(
+    token: string,
+    quoteId: string,
+    payload: { decision: 'approve' | 'reject'; comment?: string },
+  ): Promise<QuoteViewModel> {
+    return firstValueFrom(
+      this.http.patch<QuoteViewModel>(
+        `${environment.apiBaseUrl}/quotes/${quoteId}/customer-response`,
+        payload,
         {
           headers: this.authHeaders(token),
         },
@@ -404,7 +881,11 @@ export class ApiService {
     );
   }
 
-  private authHeaders(token: string): HttpHeaders {
+  private authHeaders(token?: string): HttpHeaders | undefined {
+    if (!token) {
+      return undefined;
+    }
+
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 }

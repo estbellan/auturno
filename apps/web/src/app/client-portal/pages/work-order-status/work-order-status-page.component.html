@@ -1,0 +1,139 @@
+
+    <div class="status-page">
+      <at-page-shell
+        icon="timeline"
+        [title]="i18n.t('tracking.title')"
+        [description]="i18n.t('tracking.description')"
+      />
+
+      <div class="page-body">
+      @if (loading) {
+        <section class="card status-card">{{ i18n.t('tracking.loading') }}</section>
+      } @else if (error) {
+        <section class="card status-card error">{{ error }}</section>
+      } @else if (!tracking) {
+        <section class="card status-card">{{ i18n.t('tracking.empty') }}</section>
+      } @else {
+        <section class="card hero-card">
+          <p class="eyebrow">{{ tracking.type === 'diagnostic' ? i18n.t('tracking.eyebrow.diagnostic') : i18n.t('tracking.eyebrow.direct') }}</p>
+          <h2>{{ tracking.customerFacingStatusLabel }}</h2>
+          <p class="support-copy">
+            {{ i18n.t('tracking.workOrderRef', { id: tracking.workOrderId, vehicle: tracking.vehicleLabel }) }}
+          </p>
+        </section>
+
+        <section class="card detail-card">
+          <dl class="detail-grid">
+            <div>
+              <dt>{{ i18n.t('common.vehicle') }}</dt>
+              <dd>{{ tracking.vehicleLabel }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('common.service') }}</dt>
+              <dd>{{ tracking.serviceName }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('tracking.currentStatus') }}</dt>
+              <dd>{{ formatStatus(tracking.currentStatus) }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('tracking.lastUpdated') }}</dt>
+              <dd>{{ formatDate(tracking.lastUpdatedAt) }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="card detail-card">
+          <div class="section-copy">
+            <h3>{{ i18n.t('tracking.promise.title') }}</h3>
+            <p>{{ i18n.t('tracking.promise.copy') }}</p>
+          </div>
+
+          <dl class="detail-grid">
+            @if (tracking.promisedDiagnosticAt) {
+              <div>
+                <dt>{{ i18n.t('tracking.promise.diagnostic') }}</dt>
+                <dd>{{ formatDate(tracking.promisedDiagnosticAt) }}</dd>
+              </div>
+            }
+            @if (tracking.promisedDeliveryAt) {
+              <div>
+                <dt>{{ i18n.t('tracking.promise.delivery') }}</dt>
+                <dd>{{ formatDate(tracking.promisedDeliveryAt) }}</dd>
+              </div>
+            }
+            @if (tracking.quoteStatus) {
+              <div>
+                <dt>{{ i18n.t('tracking.promise.estimate') }}</dt>
+                <dd>{{ formatQuoteStatus(tracking.quoteStatus) }}</dd>
+              </div>
+            }
+          </dl>
+        </section>
+
+        @if (tracking.quoteStatus === 'sent' && tracking.quoteId) {
+          <section class="card detail-card">
+            <div class="section-copy">
+              <h3>{{ i18n.t('tracking.quoteDecision.title') }}</h3>
+              <p>{{ i18n.t('tracking.quoteDecision.copy') }}</p>
+            </div>
+
+            <form class="quote-response-form" (ngSubmit)="submitQuoteDecision()">
+              <label class="field">
+                <span>{{ i18n.t('tracking.comment') }}</span>
+                <textarea
+                  name="quoteComment"
+                  [(ngModel)]="quoteComment"
+                  rows="3"
+                  [placeholder]="i18n.t('tracking.commentPlaceholder')"
+                ></textarea>
+              </label>
+
+              @if (quoteActionError) {
+                <section class="status-card error">{{ quoteActionError }}</section>
+              }
+
+              @if (quoteActionSuccess) {
+                <section class="status-card success">{{ quoteActionSuccess }}</section>
+              }
+
+              <div class="decision-actions">
+                <button
+                  type="button"
+                  [disabled]="quoteSubmitting"
+                  (click)="submitQuoteDecision('approve')"
+                >
+                  {{ quoteSubmitting && pendingDecision === 'approve' ? i18n.t('tracking.sendingDecision') : i18n.t('tracking.approve') }}
+                </button>
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="quoteSubmitting"
+                  (click)="submitQuoteDecision('reject')"
+                >
+                  {{ quoteSubmitting && pendingDecision === 'reject' ? i18n.t('tracking.sendingDecision') : i18n.t('tracking.reject') }}
+                </button>
+              </div>
+            </form>
+          </section>
+        }
+
+        <section class="card detail-card">
+          <div class="section-copy">
+            <h3>{{ i18n.t('tracking.progress.title') }}</h3>
+            <p>{{ i18n.t('tracking.progress.copy') }}</p>
+          </div>
+
+          <div class="milestone-list">
+            @for (milestone of milestones; track milestone.id) {
+              <article class="milestone-card" [class.current]="milestone.state === 'current'">
+                <span class="milestone-chip">{{ milestoneStateLabel(milestone.state) }}</span>
+                <h4>{{ milestone.label }}</h4>
+                <p>{{ milestone.description }}</p>
+              </article>
+            }
+          </div>
+        </section>
+      }
+      </div>
+    </div>
